@@ -21,6 +21,7 @@ public class SwaggerAPIConfig {
     public OpenAPI openAPI() {
         return new OpenAPI()
                 .components(new Components())
+                .info(swaggerApiInfo())
                 .servers(List.of(
                         // 로컬 환경 시 open API 문서
                         new Server().url("http://localhost:8080").description("local")
