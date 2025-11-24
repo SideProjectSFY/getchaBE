@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.backend.goods.model.GoodsDAO">
+    <!-- 굿즈 등록 -->
+    <insert id="insertGoods" parameterType="Goods">
+        INSERT INTO goods(
+            seller_id, anime_id,
+            category, title, description,
+            start_price, instant_buy_price, auction_status, duration
+        )
+        VALUES (
+            #{sellerId}, #{animeId},
+            #{category}, #{title}, #{description},
+            #{startPrice}, #{instantBuyPrice}, #{auctionStatus}, #{duration}
+        );
+    </insert>
+    <!-- 굿즈 다중 이미지(=파일) 업로드 -->
+    <insert id="insertFiles" parameterType="java.util.List">
+<!--        INSERT INTO file_table (file_name, file_path)-->
+<!--        VALUES-->
+<!--        <foreach collection="list" item="file" separator=",">-->
+<!--            (#{file.fileName}, #{file.filePath})-->
+<!--        </foreach>-->
+    </insert>
+    <!-- 굿즈 목록 조회 (검색/필터) -->
+    <select id="selectAllGoodsBySearch" resultType="Goods">
+
+    </select>
+    <!-- 굿즈 상세 조회 -->
+    <!--  TODO : 판매자 프로필URL 추가할 예정-->
+    <select id="selectGoodsById" parameterType="int" resultType="Goods">
+        SELECT
+            g.id, anime_id, seller_id, u.nickname as sellerNickName,
+            category ,title, description,
+            start_price, instant_buy_price, auction_status,
+            g.created_at, auction_end_at,
+            (SELECT count(*) FROM wishlist WHERE goods_id = g.id) as wishCount
+        FROM goods g
+            INNER JOIN user u
+                ON u.id = g.seller_id
+        WHERE g.id = #{id};
+    </select>
+    <!-- 굿즈 글 수정 -->
+    <update id="updateGoods" parameterType="Goods">
+
+    </update>
+    <!-- 굿즈 글 SOFT 삭제 (*경매 대기/종료 일 경우) -->
+    <update id="deleteGoods" parameterType="int">
+
+    </update>
+    <!-- 굿즈 경매 상태 업데이트 -->
+    <update id="updateAuctionStatus" parameterType="int">
+
+    </update>
+</mapper>

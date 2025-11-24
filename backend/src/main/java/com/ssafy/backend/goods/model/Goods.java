@@ -1,9 +1,8 @@
 package com.ssafy.backend.goods.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.ssafy.backend.common.enums.AuctionStatus;
+import com.ssafy.backend.common.enums.Category;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -11,7 +10,8 @@ import java.time.LocalDateTime;
  * Goods 테이블의 컬럼과 거의 똑같이 사용하는 Model
  * */
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,12 +20,12 @@ public class Goods {
     private Long id;
     private Long sellerId;
     private Long animeId;
-    // TODO : category enum 생성 필요
+    private Category category;              // enum
     private String title;
     private String description;
     private int startPrice;
     private int instantBuyPrice;
-    // TODO : auctionStatus enum 생성 필요
+    private AuctionStatus auctionStatus;    // enum
     private int duration;
     private LocalDateTime auctionEndAt;
     private LocalDateTime createdAt;
