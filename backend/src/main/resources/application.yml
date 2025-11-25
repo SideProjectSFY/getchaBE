@@ -3,6 +3,19 @@ spring:
     name: backend
   profiles:
     active: local
+# -- SMTP 설정
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: danaazzang@gmail.com
+    password: Danzzang1?
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 
 # -- mybatis 설정 --
 mybatis:
@@ -22,3 +35,4 @@ springdoc:
     operations-sorter: method        # delete - get - path - post - put 순
     display-request-duration: true   # 응답시간 표시 여부
     doc-expansion: none              # api 목록 토글 형식이 펼칠지 접을지 설정
+
