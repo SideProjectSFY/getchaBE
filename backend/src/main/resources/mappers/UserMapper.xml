@@ -1,0 +1,112 @@
+<mapper namespace="com.ssafy.backend.user.model.UserMapper">
+
+    <!-- 회원가입 -->
+    <insert id="insertUser" parameterType="User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user (
+        nickname,
+        name,
+        email,
+        password,
+        account_num,
+        account_bank,
+        created_at
+        )
+        VALUES (
+        #{nickname},
+        #{name},
+        #{email},
+        #{password},
+        #{accountNum},
+        #{accountBank},
+        #{createdAt}
+        )
+    </insert>
+
+    <select id="findByEmail" parameterType="String" resultType="User">
+    SELECT
+        id,
+        email
+    FROM
+        user
+    </select>
+
+    <!-- 관심 애니메이션 3개 저장 -->
+    <update id="updateLikedAnimes">
+        UPDATE user
+        SET
+        liked_anime_id1 = #{animeId1},
+        liked_anime_id2 = #{animeId2},
+        liked_anime_id3 = #{animeId3}
+        WHERE id = #{userId}
+    </update>
+
+
+    <!-- 관심 애니메이션 목록 조회 -->
+    <select id="findUserLikedAnimes" resultType="AnimeSelectionDto">
+        SELECT
+        t.id AS animeId,
+        t.title AS title,
+        t.poster_url AS posterUrl
+        FROM tmdb_anime t
+        WHERE t.id IN (
+        (SELECT liked_anime_id1 FROM user WHERE id = #{userId}),
+        (SELECT liked_anime_id2 FROM user WHERE id = #{userId}),
+        (SELECT liked_anime_id3 FROM user WHERE id = #{userId})
+        )
+    </select>
+
+
+    <!-- 프로필 이미지 조회 (liked_anime_id1 사용) -->
+    <select id="findProfileImage" resultType="string">
+        SELECT t.poster_url
+        FROM user u
+        JOIN tmdb_anime t ON u.liked_anime_id1 = t.id
+        WHERE u.id = #{userId}
+    </select>
+
+
+    <!-- 프로필 조회 -->
+    <select id="findById" resultType="User">
+        SELECT
+        id,
+        nickname,
+        name,
+        email,
+        password,
+        liked_anime_id1,
+        liked_anime_id2,
+        liked_anime_id3,
+        is_auth,
+        account_num,
+        account_bank,
+        created_at,
+        updated_at
+        FROM user
+        WHERE id = #{userId}
+    </select>
+
+
+    <!-- 프로필 수정 -->
+    <update id="updateUser" parameterType="User">
+        UPDATE user
+        SET
+        nickname = #{nickname},
+        account_num = #{accountNum},
+        account_bank = #{accountBank},
+        liked_anime_id1 = #{likedAnimeId1},
+        liked_anime_id2 = #{likedAnimeId2},
+        liked_anime_id3 = #{likedAnimeId3},
+        updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+
+    <!-- 회원 탈퇴 (하드 삭제 예시) -->
+    <update id="deleteUser">
+        UPDATE user
+        SET
+        deleted_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>
