@@ -3,7 +3,7 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.ssafy.backend.goods.model.GoodsDAO">
+<mapper namespace="com.ssafy.backend.goods.model.GoodsMapper">
     <!-- 굿즈 등록 -->
     <insert id="insertGoods" parameterType="Goods">
         INSERT INTO goods(
@@ -17,21 +17,57 @@
             #{startPrice}, #{instantBuyPrice}, #{auctionStatus}, #{duration}
         );
     </insert>
-    <!-- 굿즈 다중 이미지(=파일) 업로드 -->
-    <insert id="insertFiles" parameterType="java.util.List">
-<!--        INSERT INTO file_table (file_name, file_path)-->
-<!--        VALUES-->
-<!--        <foreach collection="list" item="file" separator=",">-->
-<!--            (#{file.fileName}, #{file.filePath})-->
-<!--        </foreach>-->
-    </insert>
+
+
     <!-- 굿즈 목록 조회 (검색/필터) -->
     <select id="selectAllGoodsBySearch" resultType="Goods">
-
+        SELECT
+            g.id,
+            g.title,
+            g.seller_id,
+            g.category,
+            MAX(u.nickname) AS sellerNickname,
+            MAX(b.bid_amount) AS currentBidAmount,
+            MAX(g.auction_status) AS auction_status,
+            MAX(gi.file_path) AS mainFilePath,
+            COUNT(w.goods_id) AS wishCount
+        FROM goods g
+            LEFT JOIN user u ON g.seller_id = u.id
+            LEFT JOIN bid b ON b.goods_id = g.id AND b.is_highest = TRUE
+            LEFT JOIN goods_image gi ON gi.goods_id = g.id AND gi.sort_order = 1
+            LEFT JOIN wishlist w ON w.goods_id = g.id
+        <where>
+            <if test="auctionStatus != null">
+                auction_status = #{auctionStatus}
+            </if>
+            <if test="category != null">
+                and category = #{category}
+            </if>
+            <if test="searchName != null">
+                <!-- TODO : 애니메이션 제목 검색 조건문 붙여야함   -->
+                and (title = #{searchName})
+            </if>
+        </where>
+        GROUP BY g.id
+        <!--  TODO : 경매종료일자 순 (날짜순 인데 이건 계산해야함)-->
+        ORDER BY
+            <choose>
+                <when test="sort.equals('price')">
+                    currentBidAmount DESC
+                </when>
+                <when test="sort.equals('wish')">
+                    wishCount DESC
+                </when>
+                <otherwise>
+                    g.id DESC
+                </otherwise>
+            </choose>
+        LIMIT #{offset}, #{size}
     </select>
+
     <!-- 굿즈 상세 조회 -->
     <!--  TODO : 판매자 프로필URL 추가할 예정-->
-    <select id="selectGoodsById" parameterType="int" resultType="Goods">
+    <select id="selectGoodsById" parameterType="Long" resultType="Goods">
         SELECT
             g.id, anime_id, seller_id, u.nickname as sellerNickName,
             category ,title, description,
@@ -41,18 +77,66 @@
         FROM goods g
             INNER JOIN user u
                 ON u.id = g.seller_id
-        WHERE g.id = #{id};
+        WHERE g.id = #{goodsId};
     </select>
+
+    <!-- 특정 굿즈 글의 다중 이미지 리스트 조회 -->
+    <select id="selectImagesByGoodsId" parameterType="Long" resultType="GoodsImage">
+        select id, goods_id, file_path, sort_order
+        from goods_image
+        where goods_id = #{goodsId}
+        order by sort_order;
+    </select>
+
     <!-- 굿즈 글 수정 -->
     <update id="updateGoods" parameterType="Goods">
-
+        UPDATE goods
+        SET
+            title = #{title},
+            anime_id = #{animeId},
+            category = #{category},
+            description = #{description},
+            start_price = #{startPrice},
+            instant_buy_price = #{instantBuyPrice},
+            duration = #{duration},
+            updated_at = NOW()
+        WHERE auction_status = 'WAIT'
+            AND id = #{goodsId}
+            AND deleted_at IS NULL;
     </update>
+
     <!-- 굿즈 글 SOFT 삭제 (*경매 대기/종료 일 경우) -->
-    <update id="deleteGoods" parameterType="int">
-
+    <update id="deleteGoods" parameterType="Long">
+        UPDATE goods
+            SET deleted_at = NOW()
+        WHERE id = #{goodsId}
+            AND (
+                auction_status = 'WAIT'
+                OR auction_end_at IS NOT NULL
+            );
     </update>
+
     <!-- 굿즈 경매 상태 업데이트 -->
-    <update id="updateAuctionStatus" parameterType="int">
+    <update id="updateAuctionStatus" parameterType="Long">
+        UPDATE goods
+        SET
+            auction_status = #{auctionStatus}
+            <!-- 경매 진행중, 대기 상태가 아닐 때만 종료 시점 데이터 추가 -->
+            <if test="auctionStatus != 'PROCEEDING' AND auctionStatus != 'WAIT'">
+                , auction_end_at = NOW()
+            </if>
+        WHERE id = #{goodsId}
+            AND deleted_at IS NULL
+            AND auction_end_at IS NULL;
+    </update>
+
+    <!-- 굿즈 다중 이미지(=파일) 업로드 -->
+    <insert id="insertFiles" parameterType="java.util.List">
+
+    </insert>
+
+    <!-- 굿즈 다중 이미지(=파일) 수정 -->
+    <update id="updateFiles">
 
     </update>
 </mapper>
