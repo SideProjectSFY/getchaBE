@@ -148,14 +148,16 @@ getcha/
 │   │       │   ├── mappers/   
 │   │       │   └── application.yml   
 │   │       └── java/
-│   │           └── com/clonenova/
+│   │           └── com/ssafy/
 │   │               ├── users/
 │   │               │   ├── controller/
 │   │               │   ├── service/
 │   │               │   |   └── impl/   
 │   │               │   └── model/
-│   │               │       ├── dao/   
-│   │               │       └── dto/   
+│   │               │       ├── mapper/
+│   │               │       ├── users/  
+│   │               │       ├── responseDTO/   
+│   │               │       └── requestDTO/   
 │   │               ├── auth/
 │   │               ├── goods/
 │   │               ├── bid/
