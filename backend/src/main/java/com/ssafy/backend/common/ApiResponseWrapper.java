@@ -1,19 +1,35 @@
 package com.ssafy.backend.common;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
-//@RestControllerAdvice
+@RestControllerAdvice
 public class ApiResponseWrapper implements ResponseBodyAdvice<Object> {
 
     @Override
     public boolean supports(MethodParameter returnType, Class converterType) {
+
+        HttpServletRequest request =
+                ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        String uri = request.getRequestURI();
+
+        // Swagger 문서는 묶지 않기
+        if (uri.contains("swagger")
+                || uri.contains("api-docs")
+                || uri.contains("swagger-ui")
+                || uri.contains("v3/api-docs")) {
+            return false;
+        }
+
         return true; // 모든 컨트롤러에 적용
     }
 

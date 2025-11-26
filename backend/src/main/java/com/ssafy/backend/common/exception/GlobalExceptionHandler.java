@@ -1,11 +1,14 @@
 package com.ssafy.backend.common.exception;
 
 import com.ssafy.backend.common.ApiResponse;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.net.BindException;
 import java.util.NoSuchElementException;
 
 @RestControllerAdvice
@@ -39,6 +42,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error(HttpStatus.NOT_FOUND, e.getMessage()));
+    }
+
+    /**
+     * 클라이언트 측에서 요청한 파라미터가 유효하지 않을 경우 -> 아래 메서드 자동 실행
+     * */
+    @ExceptionHandler({
+            MethodArgumentNotValidException.class,
+            BindException.class,
+            ConstraintViolationException.class
+    })
+    public ResponseEntity<ApiResponse<?>> handleConstraintViolationException(ConstraintViolationException  e) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(HttpStatus.BAD_REQUEST, e.getMessage()));
     }
 
     /**
