@@ -9,12 +9,14 @@
         INSERT INTO goods(
             seller_id, anime_id,
             category, title, description,
-            start_price, instant_buy_price, auction_status, duration
+            start_price, instant_buy_price, auction_status,
+            duration, auction_end_at, created_at, updated_at
         )
         VALUES (
             #{sellerId}, #{animeId},
             #{category}, #{title}, #{description},
-            #{startPrice}, #{instantBuyPrice}, #{auctionStatus}, #{duration}
+            #{startPrice}, #{instantBuyPrice}, 'WAIT',
+            # {duration}, #{auctionEndAt}, #{createdAt}, #{createdAt}
         );
     </insert>
 
@@ -26,9 +28,11 @@
             g.title,
             g.seller_id,
             g.category,
+            g.auction_status,
+            g.auction_end_at,
             MAX(u.nickname) AS sellerNickname,
+            MAX(ta.title) AS animeTitle,
             MAX(b.bid_amount) AS currentBidAmount,
-            MAX(g.auction_status) AS auction_status,
             MAX(gi.file_path) AS mainFilePath,
             COUNT(w.goods_id) AS wishCount
         FROM goods g
@@ -36,6 +40,7 @@
             LEFT JOIN bid b ON b.goods_id = g.id AND b.is_highest = TRUE
             LEFT JOIN goods_image gi ON gi.goods_id = g.id AND gi.sort_order = 1
             LEFT JOIN wishlist w ON w.goods_id = g.id
+            LEFT JOIN tmdb_anime ta ON ta.id = g.anime_id
         <where>
             <if test="auctionStatus != null">
                 auction_status = #{auctionStatus}
@@ -44,8 +49,10 @@
                 and category = #{category}
             </if>
             <if test="searchName != null">
-                <!-- TODO : 애니메이션 제목 검색 조건문 붙여야함   -->
-                and (title = #{searchName})
+                and (
+                    g.title like '%'|| #{searchName} ||'%'
+                    OR ta.title like '%'|| #{searchName} ||'%'
+                )
             </if>
         </where>
         GROUP BY g.id
@@ -59,24 +66,34 @@
                     wishCount DESC
                 </when>
                 <otherwise>
-                    g.id DESC
+                    g.auction_end_at DESC
                 </otherwise>
             </choose>
         LIMIT #{offset}, #{size}
     </select>
 
     <!-- 굿즈 상세 조회 -->
-    <!--  TODO : 판매자 프로필URL 추가할 예정-->
     <select id="selectGoodsById" parameterType="Long" resultType="Goods">
         SELECT
-            g.id, anime_id, seller_id, u.nickname as sellerNickName,
-            category ,title, description,
-            start_price, instant_buy_price, auction_status,
-            g.created_at, auction_end_at,
-            (SELECT count(*) FROM wishlist WHERE goods_id = g.id) as wishCount
+            g.id,
+            anime_id,
+            seller_id,
+            u.nickname as sellerNickName,
+            ta.poster_url as sellerProfileFilePath,
+            category,
+            ta.title as animeTitle,
+            g.title,
+            description,
+            start_price,
+            instant_buy_price,
+            auction_status,
+            g.created_at,
+            auction_end_at,
+            count(*) as wishCount
         FROM goods g
-            INNER JOIN user u
-                ON u.id = g.seller_id
+            INNER JOIN user u ON u.id = g.seller_id
+            LEFT JOIN wishlist w ON w.goods_id = g.id
+            LEFT JOIN tmdb_anime ta ON ta.id = g.anime_id and ta.id = u.liked_anime_id1
         WHERE g.id = #{goodsId};
     </select>
 
@@ -88,7 +105,7 @@
         order by sort_order;
     </select>
 
-    <!-- 굿즈 글 수정 -->
+    <!-- 굿즈 글 수정 (*경매 대기 일 경우에만 가능)-->
     <update id="updateGoods" parameterType="Goods">
         UPDATE goods
         SET
@@ -136,7 +153,7 @@
     </insert>
 
     <!-- 굿즈 다중 이미지(=파일) 수정 -->
-    <update id="updateFiles">
+    <update id="updateFiles" parameterType="java.util.List">
 
     </update>
 </mapper>

@@ -1,30 +1,35 @@
 package com.ssafy.backend.goods.model;
 
+import com.ssafy.backend.common.PageRequest;
 import com.ssafy.backend.common.enums.AuctionStatus;
 import com.ssafy.backend.common.enums.Category;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.awt.print.Pageable;
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 public class GoodsResponseDto {
 
+
+
     /**
-     * GoodsCardVO : 굿즈 목록 조회 시 하나의 Goods카드 데이터
+     * GoodsCard : 굿즈 목록 조회 시 하나의 Goods카드 데이터
      * */
     @Getter
     @Builder
-    public static class GoodsCardVO {
+    public static class GoodsCard {
         private Long goodsId;
         private Long sellerId;
         private String sellerNickname;          // 판매자닉네임
         private int wishCount;                  // 찜 수
         private Category category;
         private String mainFilePath;            // 굿즈대표이미지
-        private String title;
+        private String title;                   // 굿즈 글의 제목
+        private String animeTitle;              // 애니메이션 제목
         private int currentBidAmount;           // 현재 입찰가
         private AuctionStatus auctionStatus;
         private int duration;
@@ -33,12 +38,12 @@ public class GoodsResponseDto {
     }
 
     /**
-     * GoodsDetailAllVO : 굿즈 상세 조회 시 Goods 포함 다른 리스트 데이터
+     * GoodsDetailAll : 굿즈 상세 조회 시 Goods 포함 다른 리스트 데이터
      * */
     @Getter
     @Builder
-    public static class GoodsDetailAllVO {
-        GoodsDetailVO goodDetailVO;
+    public static class GoodsDetailAll {
+        GoodsDetail goodDetail;
 
         // TODO : 추후 추가할 데이터
 //        private SellerVO seller;
@@ -48,25 +53,30 @@ public class GoodsResponseDto {
     }
 
     /**
-     * GoodsDetailVO : 굿즈 상세 조회 시 굿즈관련데이터 위주
+     * GoodsDetail : 굿즈 상세 조회 시 굿즈관련데이터 위주
      * */
     @Getter
     @Builder
-    public static class GoodsDetailVO {
+    public static class GoodsDetail {
         private Long goodsId;
+        private Long animeId;
+
         private Long sellerId;
         private String sellerNickName;
-        private int wishCount;
-        private Long animeId;
-        private String animeTitle;
+        private String sellerProfileFilePath;
+
         private Category category;              // enum
+        private String animeTitle;
+
         private String title;
         private String description;
+
         private int startPrice;
         private int instantBuyPrice;
         private AuctionStatus auctionStatus;    // enum
-        private int duration;
-        private LocalDateTime auctionEndAt;
+
         private LocalDateTime createdAt;
+        private LocalDateTime auctionEndAt;
+        private int wishCount;
     }
 }

@@ -1,5 +1,7 @@
 package com.ssafy.backend.goods.service;
 
+import com.ssafy.backend.common.PageRequest;
+import com.ssafy.backend.common.PageResponse;
 import com.ssafy.backend.goods.model.GoodsRequestDto;
 import com.ssafy.backend.goods.model.GoodsResponseDto;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,27 +13,27 @@ public interface GoodsService {
 
     /**
      * 굿즈 등록
-     *  @param goodsRegister 등록된 굿즈 정도
+     *  @param goodsRegister 등록된 굿즈 정보
      *  @param files 등록된 굿즈 이미지 파일리스트
      *  @return 등록 성공 여부
      * */
     boolean addGoods(GoodsRequestDto.GoodsRegister goodsRegister, MultipartFile[] files);
 
     /**
-     * 굿즈 카드 목록 조회
+     * 굿즈 카드 목록 조회 (검색/필터)
      * @return 굿즈 카드 목록 리스트
      */
-    List<GoodsResponseDto.GoodsCardVO> getAllGoods();
+    PageResponse<GoodsResponseDto.GoodsCard> getAllGoods(GoodsRequestDto.GoodsLookUp goodsLookUp);
 
     /**
      * 굿즈 상세 조회
-     * @param goodsId goodsId
+     * @param goodsId 굿즈ID(pk)
      * @return 조회된 굿즈 정보, 없으면 null
      */
-    GoodsResponseDto.GoodsDetailAllVO getGoodsById(Long goodsId);
+    GoodsResponseDto.GoodsDetailAll getGoodsById(Long goodsId);
 
     /**
-     * 굿즈 정보 수정
+     * 굿즈 글 정보 수정
      *
      * @param goodsModify 수정된 굿즈 정보
      * @param files   수정된 굿즈 이미지 파일리스트
@@ -46,5 +48,14 @@ public interface GoodsService {
      * @return 삭제 성공 여부
      */
     boolean deleteGoods(Long goodsId);
+
+    /**
+     * 굿즈 경매 상태 업데이트
+     *
+     * @param goodsId  굿즈ID(pk)
+     * @param auctionStatus 현재 굿즈의 경매상태
+     * @return 굿즈 경매 상태 업데이트 결과
+     */
+    boolean updateAuctionStatus(Long goodsId, String auctionStatus);
 
 }
