@@ -6,6 +6,9 @@ import com.ssafy.backend.common.exception.CustomException;
 import com.ssafy.backend.goods.model.*;
 import com.ssafy.backend.goods.service.GoodsService;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,18 +20,26 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
+@Slf4j
 @Service
 public class GoodsServiceImpl implements GoodsService {
 
+    /**
+     * TODO
+     * 1. 필수 !!!
+     * - 토큰 정보 파싱 후 사용자 정보 받아오기
+     */
+    private final GoodsMapper goodsMapper;
+
     // 실제 서버 저장 경로 (TODO : 변경 필요)
-    private final String uploadDir = "/upload/getcha/goods";
+    @Value("${file.upload.path}")
+    private String uploadDir;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addGoods(GoodsRequestDto.GoodsRegister goodsRegister, List<MultipartFile> imageFiles) {
 
-        System.out.println("들어오나? ");
         // 1. 카테고리 String -> 비교 후 Enum 타입으로 변경 (없으면 기타 / Enum 에서 내부적으로 처리)
         Category category = Category.getCategory(goodsRegister.getCategory());
 
@@ -65,7 +76,7 @@ public class GoodsServiceImpl implements GoodsService {
         int sortOrder = 1;
         for (MultipartFile file : imageFiles) {
 
-            if (file.isEmpty()) continue;
+            if(file.isEmpty()) continue;
 
             if(sortOrder > 5) break;
 
@@ -90,13 +101,7 @@ public class GoodsServiceImpl implements GoodsService {
 
     }
 
-    /**
-     * TODO
-     * 1. 필수 !!!
-     * - 토큰 정보 파싱 후 사용자 정보 받아오기
-     */
 
-    private final GoodsMapper goodsMapper;
 
     @Override
     public PageResponse<GoodsResponseDto.GoodsCard> getAllGoods(GoodsRequestDto.GoodsLookUp goodsLookUp) {
@@ -148,10 +153,13 @@ public class GoodsServiceImpl implements GoodsService {
             File dir = new File(uploadDir);
             if (!dir.exists()) dir.mkdirs();
 
-            File savedFile = new File(dir, storedFilename);
-            file.transferTo(savedFile);
+            File savedFile = new File(dir.getAbsolutePath(), storedFilename);
+            // MultipartFile 의 내용을 지정된 경로로 그대로 복사/저장함
+            if(!savedFile.exists()) file.transferTo(savedFile);
+
         } catch (IOException e) {
-            throw new RuntimeException("파일 저장 실패", e);
+            log.warn(e.getMessage());
+            throw new CustomException("굿즈 이미지파일 업로드에 실패하였습니다.", HttpStatus.BAD_REQUEST);
         }
     }
 }

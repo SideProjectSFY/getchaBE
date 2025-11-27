@@ -29,7 +29,7 @@
             #{startPrice},
             #{instantBuyPrice},
             'WAIT',
-            # {duration},
+            #{duration},
             #{auctionEndAt},
             #{createdAt},
             #{createdAt}

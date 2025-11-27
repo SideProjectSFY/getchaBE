@@ -52,6 +52,7 @@ public class GoodsController {
                                             @RequestPart(value = "imageFiles", required = false)
                                             @Schema(type = "array", example = "파일", description = "다중 이미지 업로드",
                                             implementation = MultipartFile.class) List<MultipartFile> imageFiles) {
+        System.out.println("TEST");
         goodsService.addGoods(goodsRegister, imageFiles);
         return new ResponseEntity<>("굿즈가 성공적으로 등록되었습니다.",HttpStatus.CREATED);
     }
