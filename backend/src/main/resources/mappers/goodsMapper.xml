@@ -5,18 +5,34 @@
 
 <mapper namespace="com.ssafy.backend.goods.model.GoodsMapper">
     <!-- 굿즈 등록 -->
-    <insert id="insertGoods" parameterType="Goods">
+    <insert id="insertGoods" parameterType="Goods" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO goods(
-            seller_id, anime_id,
-            category, title, description,
-            start_price, instant_buy_price, auction_status,
-            duration, auction_end_at, created_at, updated_at
+            seller_id,
+            anime_id,
+            category,
+            title,
+            description,
+            start_price,
+            instant_buy_price,
+            auction_status,
+            duration,
+            auction_end_at,
+            created_at,
+            updated_at
         )
         VALUES (
-            #{sellerId}, #{animeId},
-            #{category}, #{title}, #{description},
-            #{startPrice}, #{instantBuyPrice}, 'WAIT',
-            # {duration}, #{auctionEndAt}, #{createdAt}, #{createdAt}
+            #{sellerId},
+            #{animeId},
+            #{category},
+            #{title},
+            #{description},
+            #{startPrice},
+            #{instantBuyPrice},
+            'WAIT',
+            # {duration},
+            #{auctionEndAt},
+            #{createdAt},
+            #{createdAt}
         );
     </insert>
 
@@ -148,8 +164,23 @@
     </update>
 
     <!-- 굿즈 다중 이미지(=파일) 업로드 -->
-    <insert id="insertFiles" parameterType="java.util.List">
-
+    <insert id="insertFiles" parameterType="GoodsImage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO goods_image (
+            goods_id,
+            file_path,
+            origin_filename,
+            stored_filename,
+            file_size,
+            sort_order
+        )
+        VALUES (
+            #{goodsId},
+            #{filePath},
+            #{originFilename},
+            #{storedFilename},
+            #{fileSize},
+            #{sortOrder}
+        )
     </insert>
 
     <!-- 굿즈 다중 이미지(=파일) 수정 -->

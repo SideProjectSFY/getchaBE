@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,7 +18,7 @@ public class GoodsRequestDto {
     public static class GoodsRegister {
 
         @Schema(description = "애니ID(pk)")
-        @NotBlank
+        @NotNull
         private Long animeId;
         @Schema(description = "카테고리", example = "figure")
         @NotBlank
@@ -28,7 +29,7 @@ public class GoodsRequestDto {
         @NotBlank
         private String description;
         @Schema(description = "시작가")
-        @NotBlank
+        @NotNull
         @Min(value = 1000, message = "최소 1000원 이상이어야합니다.")
         private int startPrice;
         @Min(value = 1000, message = "최소 1000원 이상이어야합니다.")

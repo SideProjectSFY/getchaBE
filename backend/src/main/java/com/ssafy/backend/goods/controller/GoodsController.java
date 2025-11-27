@@ -7,6 +7,9 @@ import com.ssafy.backend.goods.service.GoodsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -15,6 +18,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Goods Rest API
@@ -33,24 +39,21 @@ public class GoodsController {
     @Operation(
             summary = "굿즈 등록",
             description = "새로운 굿즈 정보를 등록합니다.")
-//    @ApiResponses({}) // TODO : 작성예정
-    @Parameters({
-            @Parameter(name = "animeId", description = "애니ID(pk)"),
-            @Parameter(name = "category", description = "카테고리", example = "figure"),
-            @Parameter(name = "title", description = "굿즈 글 제목"),
-            @Parameter(name = "description", description = "굿즈 상품 설명"),
-            @Parameter(name = "startPrice", description = "시작가", example = "1000"),
-            @Parameter(name = "instantBuyPrice", description = "즉시구매가", example = "5000"),
-            @Parameter(name = "duration", description = "경매기간(일)", example = "3"),
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "굿즈 등록 성공"),
+            @ApiResponse(responseCode = "500", description = "굿즈 등록 실패")
     })
+//    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+//            content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+//                    schema = @Schema(implementation = GoodsRequestDto.GoodsRegister.class))
+//    )
     @PostMapping
-    public ResponseEntity<?> postGoods(@Valid @RequestBody GoodsRequestDto.GoodsRegister goodsRegister, MultipartFile[] files) {
-        // TODO : 결과값은 추후 필요 시 수정
-        boolean result = goodsService.addGoods(goodsRegister, files);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(null);
+    public ResponseEntity<String> postGoods(@Valid @RequestPart(value = "goodRegister") GoodsRequestDto.GoodsRegister goodsRegister,
+                                            @RequestPart(value = "imageFiles", required = false)
+                                            @Schema(type = "array", example = "파일", description = "다중 이미지 업로드",
+                                            implementation = MultipartFile.class) List<MultipartFile> imageFiles) {
+        goodsService.addGoods(goodsRegister, imageFiles);
+        return new ResponseEntity<>("굿즈가 성공적으로 등록되었습니다.",HttpStatus.CREATED);
     }
 
     @Operation(

@@ -18,11 +18,10 @@ public interface GoodsMapper {
 
 
     /**
-     * 굿즈 다중 이미지(=파일) 업로드
-     * @param files 다중이미지파일
-     * @return 파일업로드 결과
+     * 굿즈 이미지(=파일) 업로드
+     * @param imageFile 이미지파일
      */
-    int insertFiles(List<MultipartFile> files);
+    void insertFiles(GoodsImage imageFile);
 
     /**
      * 굿즈 다중 이미지(=파일) 수정

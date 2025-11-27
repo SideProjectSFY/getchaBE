@@ -14,10 +14,9 @@ public interface GoodsService {
     /**
      * 굿즈 등록
      *  @param goodsRegister 등록된 굿즈 정보
-     *  @param files 등록된 굿즈 이미지 파일리스트
-     *  @return 등록 성공 여부
+     *  @param imageFiles 등록된 굿즈 이미지 파일리스트
      * */
-    boolean addGoods(GoodsRequestDto.GoodsRegister goodsRegister, MultipartFile[] files);
+    void addGoods(GoodsRequestDto.GoodsRegister goodsRegister, List<MultipartFile> imageFiles);
 
     /**
      * 굿즈 카드 목록 조회 (검색/필터)
