@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.backend.auth.model.AuthMapper">
+
+    <!-- 회원가입 -->
+    <insert id="insertUser" parameterType="com.ssafy.backend.user.model.User">
+        INSERT INTO user (
+            liked_anime_id1,
+            liked_anime_id2,
+            liked_anime_id3,
+            nickname,
+            name,
+            email,
+            password,
+            is_auth,
+            account_num,
+            account_bank,
+            created_at
+        )
+        VALUES (
+                   #{likedAnimeId1},
+                   #{likedAnimeId2},
+                   #{likedAnimeId3},
+                   #{nickname},
+                   #{name},
+                   #{email},
+                   #{password},
+                   #{isAuth},
+                   #{accountNum},
+                   #{accountBank},
+                   #{createdAt}
+               )
+    </insert>
+
+    <!-- 로그인용 사용자 조회 -->
+    <select id="findActiveUserByEmail" resultType="com.ssafy.backend.user.model.User">
+        SELECT
+            id,
+            liked_anime_id1,
+            liked_anime_id2,
+            liked_anime_id3,
+            name,
+            nickname,
+            email,
+            password,
+            is_auth,
+            created_at,
+            updated_at,
+            deleted_at,
+            account_num,
+            account_bank
+        FROM user
+        WHERE email = #{email}
+          AND deleted_at IS NULL
+            LIMIT 1
+    </select>
+
+    <!-- 이메일 중복 체크 -->
+    <select id="existsByEmail" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM user
+            WHERE email = #{email}
+        )
+    </select>
+
+    <!-- email 기반 id 조회 -->
+    <select id="findIdByEmail" resultType="long">
+        SELECT id
+        FROM user
+        WHERE email = #{email}
+        ORDER BY id DESC
+            LIMIT 1
+    </select>
+
+    <!-- 선택한 애니메이션 존재 여부 확인 -->
+    <select id="countAnimeByIds" resultType="int">
+        SELECT COUNT(*)
+        FROM tmdb_anime
+        WHERE id IN
+        <foreach collection="animeIds" item="animeId" open="(" separator="," close=")">
+            #{animeId}
+        </foreach>
+    </select>
+
+    <!-- 애니 검색 -->
+    <select id="searchAnimeByKeyword" resultType="com.ssafy.backend.user.model.AnimeSelectionDto">
+        SELECT
+            id AS animeId,
+            title,
+            poster_url AS posterUrl
+        FROM tmdb_anime
+        WHERE title LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY popularity DESC, title ASC
+            LIMIT #{limit}
+    </select>
+
+
+</mapper>
