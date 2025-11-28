@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigInteger;
 import java.time.LocalDateTime;
 
 @Getter
@@ -14,9 +13,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class User {
     private Long id;
-    private Long liked_anime_id1;
-    private Long liked_anime_id2;
-    private Long liked_anime_id3;
+    private Long likedAnimeId1;
+    private Long likedAnimeId2;
+    private Long likedAnimeId3;
     private String name;
     private String nickname;
     private String email;
