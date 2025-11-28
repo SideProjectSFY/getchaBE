@@ -1,6 +1,7 @@
 package com.ssafy.backend.goods.service.impl;
 
 import com.ssafy.backend.common.PageResponse;
+import com.ssafy.backend.common.enums.AuctionStatus;
 import com.ssafy.backend.common.enums.Category;
 import com.ssafy.backend.common.exception.CustomException;
 import com.ssafy.backend.goods.model.*;
@@ -17,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -44,22 +46,16 @@ public class GoodsServiceImpl implements GoodsService {
     @Transactional(rollbackFor = Exception.class)
     public void addGoods(GoodsRequestDto.GoodsRegister goodsRegister, List<MultipartFile> imageFiles) {
 
-        // 1. 카테고리 String -> 비교 후 Enum 타입으로 변경 (없으면 기타 / Enum 에서 내부적으로 처리)
-        Category category = Category.getCategory(goodsRegister.getCategory());
-
         // 2. 경매기간 받아서, 종료일시 저장
         // 시간 맞춰야해서 따로 저장
         LocalDateTime createdAt = LocalDateTime.now();
         int duration = goodsRegister.getDuration();
         LocalDateTime auctionEndAt = createdAt.plusDays(duration);
 
-
-        // TODO : 금액 최소, 최대 체크할지 말지 고민 (프론트에서만 처리할까, 백엔드에서도 한번더 검증할까)
-
         Goods goods = Goods.builder()
                 .sellerId(1L) // TODO : Token 파싱 후 넣을 userId
                 .animeId(goodsRegister.getAnimeId())
-                .category(category)
+                .category(goodsRegister.getCategory())
                 .title(goodsRegister.getTitle())
                 .description(goodsRegister.getDescription())
                 .startPrice(goodsRegister.getStartPrice())
@@ -72,7 +68,7 @@ public class GoodsServiceImpl implements GoodsService {
         // 3. 굿즈 등록
         int saveResult = goodsMapper.insertGoods(goods);
         // 굿즈 등록에 실패 시 에러 던지기
-        if(saveResult < 1) throw new CustomException("굿즈 등록에 실패하였습니다", HttpStatus.INTERNAL_SERVER_ERROR);
+        if(saveResult < 1) throw new CustomException("굿즈 등록에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
 
         Long goodsId = goods.getId();
 
@@ -110,9 +106,17 @@ public class GoodsServiceImpl implements GoodsService {
     @Override
     public PageResponse<GoodsResponseDto.GoodsCard> getAllGoods(GoodsRequestDto.GoodsLookUp goodsLookUp) {
 
-        // 목록 반환 결과 받은 뒤 남은 기간 계산해서 setting
+        log.info(goodsLookUp.toString());
+        goodsLookUp.setPageOffset(goodsLookUp.getOffset());
 
-        return null;
+        List<GoodsResponseDto.GoodsCard> goodsCardsList = goodsMapper.selectAllGoodsBySearch(goodsLookUp);
+
+        long totalCount = goodsMapper.countGoods(goodsLookUp);
+        if(totalCount == 0) throw new NoSuchElementException("등록된 굿즈가 없습니다.");
+
+        int totalPages = (int) Math.ceil((double) totalCount / goodsLookUp.getSize());
+
+        return new PageResponse<>(goodsCardsList, goodsLookUp.getPage(), totalPages, totalCount);
     }
 
 

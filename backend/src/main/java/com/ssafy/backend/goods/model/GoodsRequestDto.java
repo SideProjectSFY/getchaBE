@@ -1,6 +1,8 @@
 package com.ssafy.backend.goods.model;
 
 import com.ssafy.backend.common.PageRequest;
+import com.ssafy.backend.common.enums.AuctionStatus;
+import com.ssafy.backend.common.enums.Category;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -8,6 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 public class GoodsRequestDto {
@@ -22,7 +25,7 @@ public class GoodsRequestDto {
         private Long animeId;
         @Schema(description = "카테고리", example = "figure")
         @NotBlank
-        private String category;
+        private Category category;
 
         @NotBlank
         private String title;
@@ -43,11 +46,10 @@ public class GoodsRequestDto {
     @Schema(description = "굿즈 목록 조회 DTO")
     @Getter
     @Setter
+    @ToString
     public static class GoodsLookUp extends PageRequest {
-        @Schema(description = "경매상태", example = "wait")
-        private String auctionStatus;
-        @Schema(description = "카테고리", example = "figure")
-        private String category;
+        private AuctionStatus auctionStatus;
+        private Category category;
     }
 
     @Schema(description = "굿즈 수정 DTO")

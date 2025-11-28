@@ -33,7 +33,10 @@ public interface GoodsMapper {
     /**
      * 굿즈 카드 목록 조회 (검색/필터)
      * */
-    List<Goods> selectAllGoodsBySearch();
+    List<GoodsResponseDto.GoodsCard> selectAllGoodsBySearch(GoodsRequestDto.GoodsLookUp goodsLookUp);
+
+    // 굿즈 글 총 갯수
+    int countGoods(GoodsRequestDto.GoodsLookUp goodsLookUp);
 
     /**
      * 굿즈 상세 조회

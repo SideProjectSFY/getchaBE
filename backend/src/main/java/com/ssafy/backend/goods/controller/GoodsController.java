@@ -7,13 +7,14 @@ import com.ssafy.backend.goods.service.GoodsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +30,7 @@ import java.util.List;
 @RequestMapping("/goods")
 @Tag(name = "Goods API", description = "굿즈 등록, 조회, 수정, 삭제 API")
 @RestController
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class GoodsController {
 
     // TODO : 추후 반환값 수정 + 예외처리 추가
@@ -58,13 +59,38 @@ public class GoodsController {
             description = "굿즈 목록을 조회합니다."
     )
     @Parameters({
-            @Parameter(name = "auctionStatus", description = "경매상태", example = "wait"),
-            @Parameter(name = "category", description = "카테고리", example = "figure"),
+            @Parameter(name = "page", description = "페이지", example = "1"),
+            @Parameter(name = "size", description = "크기", example = "10"),
+            @Parameter(name = "sort", description = "정렬기준", examples = {
+                    @ExampleObject(name = "현재입찰가순(높은순)", value = "price"),
+                    @ExampleObject(name = "찜 수(많은순)", value = "wish"),
+                    @ExampleObject(name = "날짜순(현재일자와 가장 가까운 경매종료일자순)/default", value = "auctionEndAt")
+            }),
+            @Parameter(name = "searchName", description = "검색명(글 제목 or 애니메이션 제목)", examples = {
+                    @ExampleObject(name = "글 제목", value = "나루토 피규어 모양"),
+                    @ExampleObject(name = "애니메이션 제목", value = "나루토")
+            }),
+            @Parameter(name = "auctionStatus", description = "경매상태", examples = {
+                    @ExampleObject(name = "대기", value = "WAIT"),
+                    @ExampleObject(name = "진행중", value = "PROCEEDING"),
+                    @ExampleObject(name = "낙찰", value = "COMPLETED"),
+                    @ExampleObject(name = "패찰", value = "STOPPED"),
+            }),
+            @Parameter(name = "category", description = "카테고리", example = "figure", examples = {
+                    @ExampleObject(name = "피규어", value = "FIGURE"),
+                    @ExampleObject(name = "포토카드", value = "PHOTOCARD"),
+                    @ExampleObject(name = "아크릴스탠드", value = "ACRYLICSTAND"),
+                    @ExampleObject(name = "키링", value = "KEYRING"),
+                    @ExampleObject(name = "인형", value = "DOLL"),
+                    @ExampleObject(name = "포스터", value = "POSTER"),
+                    @ExampleObject(name = "뱃지류", value = "BADGE"),
+                    @ExampleObject(name = "기타", value = "OTHER")
+            })
     })
     @GetMapping("/list")
-    public ResponseEntity<?> getAllGoods(@Valid @ModelAttribute GoodsRequestDto.GoodsLookUp goodsLookUp) {
+    public ResponseEntity<PageResponse<GoodsResponseDto.GoodsCard>> getAllGoods(@Valid @ModelAttribute GoodsRequestDto.GoodsLookUp goodsLookUp) {
         PageResponse<GoodsResponseDto.GoodsCard> allGoods = goodsService.getAllGoods(goodsLookUp);
-        return ResponseEntity.ok(null);
+        return ResponseEntity.ok(allGoods);
     }
 
     @Operation(

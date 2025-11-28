@@ -11,8 +11,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PageRequest {
-    private int page;
-    private int size;
+
+    private int page = 1;
+    private int size = 10;
+    private int pageOffset;
     private String sort = "createdAt"; // 기본값
     private String searchName;         // 검색명
 

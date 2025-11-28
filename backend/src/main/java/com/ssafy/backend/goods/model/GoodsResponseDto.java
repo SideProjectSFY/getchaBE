@@ -1,13 +1,9 @@
 package com.ssafy.backend.goods.model;
 
-import com.ssafy.backend.common.PageRequest;
 import com.ssafy.backend.common.enums.AuctionStatus;
 import com.ssafy.backend.common.enums.Category;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
-import java.awt.print.Pageable;
 import java.time.LocalDateTime;
 
 @Getter
@@ -21,6 +17,8 @@ public class GoodsResponseDto {
      * */
     @Getter
     @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class GoodsCard {
         private Long goodsId;
         private Long sellerId;
@@ -32,7 +30,6 @@ public class GoodsResponseDto {
         private String animeTitle;              // 애니메이션 제목
         private int currentBidAmount;           // 현재 입찰가
         private AuctionStatus auctionStatus;
-        private int duration;
         private LocalDateTime auctionEndAt;
         private LocalDateTime createdAt;
     }
