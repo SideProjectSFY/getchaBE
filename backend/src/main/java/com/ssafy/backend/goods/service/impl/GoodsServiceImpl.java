@@ -5,7 +5,6 @@ import com.ssafy.backend.common.enums.Category;
 import com.ssafy.backend.common.exception.CustomException;
 import com.ssafy.backend.goods.model.*;
 import com.ssafy.backend.goods.service.GoodsService;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,9 +31,14 @@ public class GoodsServiceImpl implements GoodsService {
      */
     private final GoodsMapper goodsMapper;
 
-    // 실제 서버 저장 경로 (TODO : 변경 필요)
+    // 실제 서버 저장 상대경로 prefix
+    @Value("${file.upload.prefix}")
+    private String filePrefix;
+
+    // 실제 서버 저장 상대경로 filePath
     @Value("${file.upload.path}")
-    private String uploadDir;
+    private String filePath;
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -50,7 +54,7 @@ public class GoodsServiceImpl implements GoodsService {
         LocalDateTime auctionEndAt = createdAt.plusDays(duration);
 
 
-        //금액 최소, 최대 체크할지 말지 고민 (프론트에서만 처리할까, 백엔드에서도 한번더 검증할까)
+        // TODO : 금액 최소, 최대 체크할지 말지 고민 (프론트에서만 처리할까, 백엔드에서도 한번더 검증할까)
 
         Goods goods = Goods.builder()
                 .sellerId(1L) // TODO : Token 파싱 후 넣을 userId
@@ -90,7 +94,7 @@ public class GoodsServiceImpl implements GoodsService {
                     .goodsId(goodsId)
                     .originFilename(originalFilename)
                     .storedFilename(storedFilename)
-                    .filePath(uploadDir + "/" + storedFilename)
+                    .filePath(filePath + "/" + storedFilename)
                     .fileSize(file.getSize())
                     .sortOrder(sortOrder++)
                     .build();
@@ -142,20 +146,40 @@ public class GoodsServiceImpl implements GoodsService {
         return false;
     }
 
-
+    /**
+     * 사용자가 업로드한 파일명을 다른 사용자가 올린 파일명과 중복되지 않게 유니크한
+     * 로컬 서버 저장용 파일명 생성하는 메서드
+     * @param original 기존파일명
+     * @return 로컬 서버 저장용 파일명
+     */
     private String generateStoredFilename(String original) {
         String uuid = UUID.randomUUID().toString();
         return uuid + "_" + original;
     }
 
+    /**
+     * 사용자 로컬에서 업로드된 파일들을 로컬 서버에 저장하는 메서드
+     * @param file 사용자가 업로드한 파일
+     * @param storedFilename 로직에서 만든 유니크한 fileName
+     */
     private void saveFileToLocal(MultipartFile file, String storedFilename) {
         try {
-            File dir = new File(uploadDir);
+            // 실제 저장될 물리 경로
+            String fullPath = filePrefix + filePath;
+
+            // 물리 경로에 굿즈이미지를 저장할 폴더가 없다면 만들기
+            File dir = new File(fullPath);
             if (!dir.exists()) dir.mkdirs();
 
+            // 로컬 개발환경 물리 경로에 저장
             File savedFile = new File(dir.getAbsolutePath(), storedFilename);
-            // MultipartFile 의 내용을 지정된 경로로 그대로 복사/저장함
-            if(!savedFile.exists()) file.transferTo(savedFile);
+
+            if(!savedFile.exists()) {
+                // MultipartFile 의 내용을 지정된 경로로 그대로 복사/저장함
+                file.transferTo(savedFile);
+                // 잘 저장되었는지 확인하기 위한 파일 사이즈 로그 찍기
+                log.info("fileService.uploadFile -> fileSize :: " + file.getSize());
+            }
 
         } catch (IOException e) {
             log.warn(e.getMessage());

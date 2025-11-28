@@ -5,6 +5,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+# 이미지 파일 제외
+../goodsImageFiles
+
 # 환경 설정 파일 (보안정보 포함)
 application-*.yml
 .env

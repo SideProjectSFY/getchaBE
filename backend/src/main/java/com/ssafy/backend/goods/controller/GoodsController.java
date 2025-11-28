@@ -40,19 +40,15 @@ public class GoodsController {
             summary = "굿즈 등록",
             description = "새로운 굿즈 정보를 등록합니다.")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "굿즈 등록 성공"),
-            @ApiResponse(responseCode = "500", description = "굿즈 등록 실패")
+            @ApiResponse(responseCode = "201", description = "굿즈가 성공적으로 등록되었습니다."),
+            @ApiResponse(responseCode = "400", description = "굿즈 이미지파일 업로드에 실패하였습니다."),
+            @ApiResponse(responseCode = "500", description = "굿즈 등록에 실패하였습니다.")
     })
-//    @io.swagger.v3.oas.annotations.parameters.RequestBody(
-//            content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
-//                    schema = @Schema(implementation = GoodsRequestDto.GoodsRegister.class))
-//    )
     @PostMapping
     public ResponseEntity<String> postGoods(@Valid @RequestPart(value = "goodRegister") GoodsRequestDto.GoodsRegister goodsRegister,
                                             @RequestPart(value = "imageFiles", required = false)
                                             @Schema(type = "array", example = "파일", description = "다중 이미지 업로드",
                                             implementation = MultipartFile.class) List<MultipartFile> imageFiles) {
-        System.out.println("TEST");
         goodsService.addGoods(goodsRegister, imageFiles);
         return new ResponseEntity<>("굿즈가 성공적으로 등록되었습니다.",HttpStatus.CREATED);
     }
