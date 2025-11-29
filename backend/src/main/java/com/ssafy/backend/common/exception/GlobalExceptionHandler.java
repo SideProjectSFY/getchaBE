@@ -2,6 +2,7 @@ package com.ssafy.backend.common.exception;
 
 import com.ssafy.backend.common.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -12,6 +13,7 @@ import java.net.BindException;
 import java.util.NoSuchElementException;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     /**
@@ -19,6 +21,7 @@ public class GlobalExceptionHandler {
      * */
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiResponse<?>> handleCustomException(CustomException e) {
+
         return ResponseEntity
                 .status(e.getStatus())
                 .body(ApiResponse.error(e.getStatus(), e.getMessage()));
@@ -29,6 +32,9 @@ public class GlobalExceptionHandler {
      * */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<?>> handleIllegalArgument(IllegalArgumentException e) {
+
+        log.warn("IllegalArgumentException e : " + e.getMessage());
+
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(HttpStatus.BAD_REQUEST, e.getMessage()));
@@ -39,23 +45,59 @@ public class GlobalExceptionHandler {
      * */
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<ApiResponse<?>> handleNoSuchElement(NoSuchElementException e) {
+
+        log.warn("NoSuchElementException e : " + e.getMessage());
+
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error(HttpStatus.NOT_FOUND, e.getMessage()));
     }
 
     /**
-     * 클라이언트 측에서 요청한 파라미터가 유효하지 않을 경우 -> 아래 메서드 자동 실행
-     * */
-    @ExceptionHandler({
-            MethodArgumentNotValidException.class,
-            BindException.class,
-            ConstraintViolationException.class
-    })
-    public ResponseEntity<ApiResponse<?>> handleConstraintViolationException(ConstraintViolationException  e) {
+     * DTO @Valid 검증 실패 예외 처리
+     * - RequestBody → DTO 변환 과정에서 필드 검증 실패
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<?>> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
+
+        log.warn("MethodArgumentNotValidException e : " + e.getMessage());
+
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(HttpStatus.BAD_REQUEST, e.getMessage()));
+                .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "DTO @Valid 검증 실패하였습니다."));
+    }
+
+
+
+    /**
+     * GET 쿼리 파라미터 바인딩 실패 예외 처리
+     * - @ModelAttribute, QueryParam 등의 값 검증 실패
+     */
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<ApiResponse<?>> handleBindException(BindException e) {
+
+        log.warn("BindException e : " + e.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "GET 쿼리 파라미터 바인딩에 실패하였습니다."));
+    }
+
+
+
+    /**
+     * @Validated 파라미터 제약조건(Constraint) 위반 예외 처리
+     * - RequestParam, PathVariable 값 검증 실패
+     * - Enum 타입 잘못 전달된 경우 포함
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<?>> handleConstraintViolationException(ConstraintViolationException e) {
+
+        log.warn("ConstraintViolationException e : " + e.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "@Validated 파라미터 제약조건(Constraint) 을 위반하였습니다."));
     }
 
     /**
@@ -63,6 +105,9 @@ public class GlobalExceptionHandler {
      * */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleException(Exception e) {
+
+        log.warn("Exception e : " + e.getMessage());
+
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류"));
