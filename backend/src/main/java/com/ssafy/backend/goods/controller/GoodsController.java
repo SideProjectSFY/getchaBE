@@ -44,7 +44,7 @@ public class GoodsController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "굿즈가 성공적으로 등록되었습니다."),
             @ApiResponse(responseCode = "400", description = "굿즈 이미지파일 업로드에 실패하였습니다."),
-            @ApiResponse(responseCode = "500", description = "굿즈 등록에 실패하였습니다.")
+            @ApiResponse(responseCode = "503", description = "굿즈 등록에 실패하였습니다.")
     })
     @PostMapping
     public ResponseEntity<String> postGoods(@Valid @RequestPart(value = "goodRegister") GoodsRequestDto.GoodsRegister goodsRegister,
@@ -119,8 +119,12 @@ public class GoodsController {
             summary = "굿즈 글 정보 삭제",
             description = "경매 상태가 대기 or 종료 일 때만 굿즈 글을 삭제할 수 있습니다."
     )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "굿즈 글이 성공적으로 삭제되었습니다."),
+            @ApiResponse(responseCode = "400", description = "경매 대기 또는 종료된 후에만 삭제가 가능합니다."),
+            @ApiResponse(responseCode = "503", description = "굿즈 글 삭제에 실패하였습니다")
+    })
     @Parameter(name = "goodsId", description = "굿즈ID(pk)")
-
     @DeleteMapping
     public ResponseEntity<String> deleteGoods(@NotNull @RequestParam Long goodsId) {
         goodsService.deleteGoods(goodsId);
@@ -130,10 +134,16 @@ public class GoodsController {
     @Operation(
             summary = "굿즈 글 거래 중지",
             description = "판매자가 거래 중지 버튼을 클릭했을 경우 호출합니다")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "거래 중지가 성공적으로 적용되었습니다."),
+            // TODO : 예치금 환원 관련 예외처리 필요
+            @ApiResponse(responseCode = "400", description = ""),
+            @ApiResponse(responseCode = "503", description = "거래 중지를 실패하였습니다.")
+    })
     @Parameter(name = "goodsId", description = "굿즈ID(pk)", required = true)
     @PutMapping("/stop-auction")
-    public ResponseEntity<?> updateAuctionStatus(@NotNull @RequestParam Long goodsId) {
-        boolean result = goodsService.updateAuctionStatus(goodsId, "stopped");
-        return ResponseEntity.ok(null);
+    public ResponseEntity<String> updateAuctionStatus(@NotNull @RequestParam Long goodsId) {
+        goodsService.updateAuctionStatus(goodsId);
+        return new ResponseEntity<>("거래 중지가 성공적으로 적용되었습니다.", HttpStatus.OK);
     }
 }

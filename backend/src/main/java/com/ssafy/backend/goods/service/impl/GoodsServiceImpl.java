@@ -134,12 +134,14 @@ public class GoodsServiceImpl implements GoodsService {
     }
 
     @Override
+    @Transactional
     public boolean updateGoods(GoodsRequestDto.GoodsModify goodsModify, MultipartFile[] files) {
         // 1. duration 이 update 되었다면 auction_end_at 도 계산해서 update
         return false;
     }
 
     @Override
+    @Transactional
     public void deleteGoods(Long goodsId) {
         // TODO : 본인이 쓴 글만 삭제가능 (userId 정보와 굿즈글의 sellerId 비교 후 삭제)
 
@@ -156,13 +158,18 @@ public class GoodsServiceImpl implements GoodsService {
     }
 
     @Override
-    public boolean updateAuctionStatus(Long goodsId, String auctionStatus) {
-        // - 거래 중지는 언제든지 가능
-        // TODO : 거래중지 시 Lock 상태의 참여자에게 예치금 환원
+    @Transactional
+    public void updateAuctionStatus(Long goodsId) {
+        /**
+         *  TODO
+         *  1. 본인이 쓴 글인지 확인
+         *  2. 거래중지 시 Lock 상태의 참여자에게 예치금 환원
+         */
         // - 거래중지 알림 발송
 
-
-        return false;
+        // 경매 상태 -> 패찰로 업데이트
+        int result = goodsMapper.updateAuctionStatus(goodsId, AuctionStatus.STOPPED);
+        if(result < 1) throw new CustomException("거래 중지를 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     /**

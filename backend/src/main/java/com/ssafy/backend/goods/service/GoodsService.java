@@ -47,11 +47,8 @@ public interface GoodsService {
 
     /**
      * 굿즈 경매 상태 업데이트
-     *
-     * @param goodsId  굿즈ID(pk)
-     * @param auctionStatus 현재 굿즈의 경매상태
-     * @return 굿즈 경매 상태 업데이트 결과
+     * @param goodsId 굿즈ID(pk)
      */
-    boolean updateAuctionStatus(Long goodsId, String auctionStatus);
+    void updateAuctionStatus(Long goodsId);
 
 }

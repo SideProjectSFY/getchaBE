@@ -5,8 +5,6 @@
 
 <mapper namespace="com.ssafy.backend.goods.model.GoodsMapper">
 
-
-
     <!-- 굿즈 등록 -->
     <insert id="insertGoods" parameterType="Goods" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO goods(
@@ -165,15 +163,12 @@
             AND deleted_at IS NULL;
     </update>
 
-    <!-- 굿즈 글 SOFT 삭제 (*경매 대기/종료 일 경우) -->
+    <!-- 굿즈 글 SOFT 삭제 (*진행중이 아닐 경우에만 삭제) -->
     <update id="deleteGoods" parameterType="Long">
         UPDATE goods
             SET deleted_at = NOW()
         WHERE id = #{goodsId}
-            AND (
-                auction_status = 'WAIT'
-                OR auction_end_at IS NOT NULL
-            );
+            AND auction_status != 'PROCEEDING'
     </update>
 
     <!-- 특정 굿즈 경매 상태 조회 -->
@@ -184,17 +179,12 @@
     </select>
 
     <!-- 굿즈 경매 상태 업데이트 -->
-    <update id="updateAuctionStatus" parameterType="Long">
+    <update id="updateAuctionStatus">
         UPDATE goods
         SET
             auction_status = #{auctionStatus}
-            <!-- 경매 진행중, 대기 상태가 아닐 때만 종료 시점 데이터 추가 -->
-            <if test="auctionStatus != 'PROCEEDING' AND auctionStatus != 'WAIT'">
-                , auction_end_at = NOW()
-            </if>
         WHERE id = #{goodsId}
-            AND deleted_at IS NULL
-            AND auction_end_at IS NULL;
+            AND deleted_at IS NULL;
     </update>
 
     <!-- 굿즈 다중 이미지(=파일) 업로드 -->

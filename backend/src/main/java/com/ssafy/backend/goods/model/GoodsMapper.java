@@ -85,6 +85,6 @@ public interface GoodsMapper {
      * @param goodsId 굿즈ID(pk)
      * @return 굿즈 경매 상태 업데이트 결과반환
      * */
-    int updateAuctionStatus(Long goodsId);
+    int updateAuctionStatus(Long goodsId, AuctionStatus auctionStatus);
 
 }
