@@ -176,6 +176,13 @@
             );
     </update>
 
+    <!-- 특정 굿즈 경매 상태 조회 -->
+    <select id="selectAuctionStatusByGoodsId" parameterType="Long" resultType="com.ssafy.backend.common.enums.AuctionStatus">
+        SELECT auction_status
+        FROM goods
+        WHERE id = #{goodsId}
+    </select>
+
     <!-- 굿즈 경매 상태 업데이트 -->
     <update id="updateAuctionStatus" parameterType="Long">
         UPDATE goods

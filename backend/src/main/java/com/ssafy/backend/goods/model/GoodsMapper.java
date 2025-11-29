@@ -1,5 +1,6 @@
 package com.ssafy.backend.goods.model;
 
+import com.ssafy.backend.common.enums.AuctionStatus;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,10 +33,16 @@ public interface GoodsMapper {
 
     /**
      * 굿즈 카드 목록 조회 (검색/필터)
-     * */
+     * @param goodsLookUp 굿즈 조회용 정보
+     * @return 조회된 굿즈카드 리스트
+     */
     List<GoodsResponseDto.GoodsCard> selectAllGoodsBySearch(GoodsRequestDto.GoodsLookUp goodsLookUp);
 
-    // 굿즈 글 총 갯수
+    /**
+     * 굿즈 카드 총 개수
+     * @param goodsLookUp 굿즈 조회용 정보
+     * @return 굿즈 카드 총 개수
+     */
     int countGoods(GoodsRequestDto.GoodsLookUp goodsLookUp);
 
     /**
@@ -65,6 +72,13 @@ public interface GoodsMapper {
      * @return 굿즈 글 삭제 결과 반환
      * */
     int deleteGoods(Long goodsId);
+
+    /**
+     * 특정 굿즈 경매 상태 조회
+     * @param goodsId 경매상태 조회할 굿즈ID
+     * @return 경매 상태
+     */
+    AuctionStatus selectAuctionStatusByGoodsId(Long goodsId);
 
     /**
      * 굿즈 경매 상태 업데이트

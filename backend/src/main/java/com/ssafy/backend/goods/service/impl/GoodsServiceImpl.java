@@ -2,7 +2,6 @@ package com.ssafy.backend.goods.service.impl;
 
 import com.ssafy.backend.common.PageResponse;
 import com.ssafy.backend.common.enums.AuctionStatus;
-import com.ssafy.backend.common.enums.Category;
 import com.ssafy.backend.common.exception.CustomException;
 import com.ssafy.backend.goods.model.*;
 import com.ssafy.backend.goods.service.GoodsService;
@@ -45,6 +44,7 @@ public class GoodsServiceImpl implements GoodsService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addGoods(GoodsRequestDto.GoodsRegister goodsRegister, List<MultipartFile> imageFiles) {
+        // TODO : 로그인 되었는지 체크 !
 
         // 2. 경매기간 받아서, 종료일시 저장
         // 시간 맞춰야해서 따로 저장
@@ -68,7 +68,7 @@ public class GoodsServiceImpl implements GoodsService {
         // 3. 굿즈 등록
         int saveResult = goodsMapper.insertGoods(goods);
         // 굿즈 등록에 실패 시 에러 던지기
-        if(saveResult < 1) throw new CustomException("굿즈 등록에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
+        if(saveResult < 1) throw new CustomException("굿즈 글 등록에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
 
         Long goodsId = goods.getId();
 
@@ -106,7 +106,6 @@ public class GoodsServiceImpl implements GoodsService {
     @Override
     public PageResponse<GoodsResponseDto.GoodsCard> getAllGoods(GoodsRequestDto.GoodsLookUp goodsLookUp) {
 
-        log.info(goodsLookUp.toString());
         goodsLookUp.setPageOffset(goodsLookUp.getOffset());
 
         List<GoodsResponseDto.GoodsCard> goodsCardsList = goodsMapper.selectAllGoodsBySearch(goodsLookUp);
@@ -141,12 +140,28 @@ public class GoodsServiceImpl implements GoodsService {
     }
 
     @Override
-    public boolean deleteGoods(Long goodsId) {
-        return false;
+    public void deleteGoods(Long goodsId) {
+        // TODO : 본인이 쓴 글만 삭제가능 (userId 정보와 굿즈글의 sellerId 비교 후 삭제)
+
+        // 상태 체크
+        AuctionStatus auctionStatus = goodsMapper.selectAuctionStatusByGoodsId(goodsId);
+        // 진행중이 아닐 때만 삭제 (경매 대기 or 완료 일 때만 삭제가능)
+        if(auctionStatus != AuctionStatus.PROCEEDING) {
+            int deleteResult = goodsMapper.deleteGoods(goodsId);
+            if(deleteResult < 1) throw new CustomException("굿즈 글 삭제에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
+
+        } else {
+            throw new CustomException("경매 대기 또는 종료된 후에만 삭제가 가능합니다.", HttpStatus.BAD_REQUEST);
+        }
     }
 
     @Override
     public boolean updateAuctionStatus(Long goodsId, String auctionStatus) {
+        // - 거래 중지는 언제든지 가능
+        // TODO : 거래중지 시 Lock 상태의 참여자에게 예치금 환원
+        // - 거래중지 알림 발송
+
+
         return false;
     }
 

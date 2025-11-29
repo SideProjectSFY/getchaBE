@@ -1,6 +1,5 @@
 package com.ssafy.backend.goods.service;
 
-import com.ssafy.backend.common.PageRequest;
 import com.ssafy.backend.common.PageResponse;
 import com.ssafy.backend.goods.model.GoodsRequestDto;
 import com.ssafy.backend.goods.model.GoodsResponseDto;
@@ -42,11 +41,9 @@ public interface GoodsService {
 
     /**
      * 굿즈 삭제
-     *
      * @param goodsId 삭제할 굿즈 ID
-     * @return 삭제 성공 여부
      */
-    boolean deleteGoods(Long goodsId);
+    void deleteGoods(Long goodsId);
 
     /**
      * 굿즈 경매 상태 업데이트

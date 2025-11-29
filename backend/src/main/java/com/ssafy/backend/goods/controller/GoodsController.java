@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -119,10 +120,11 @@ public class GoodsController {
             description = "경매 상태가 대기 or 종료 일 때만 굿즈 글을 삭제할 수 있습니다."
     )
     @Parameter(name = "goodsId", description = "굿즈ID(pk)")
+
     @DeleteMapping
-    public ResponseEntity<?> deleteGoods(@NotBlank @RequestParam Long goodsId) {
-        boolean result = goodsService.deleteGoods(goodsId);
-        return ResponseEntity.ok(null);
+    public ResponseEntity<String> deleteGoods(@NotNull @RequestParam Long goodsId) {
+        goodsService.deleteGoods(goodsId);
+        return new ResponseEntity<>("굿즈 글이 성공적으로 삭제되었습니다.", HttpStatus.OK);
     }
 
     @Operation(
@@ -130,7 +132,7 @@ public class GoodsController {
             description = "판매자가 거래 중지 버튼을 클릭했을 경우 호출합니다")
     @Parameter(name = "goodsId", description = "굿즈ID(pk)", required = true)
     @PutMapping("/stop-auction")
-    public ResponseEntity<?> updateAuctionStatus(@NotBlank @RequestParam Long goodsId) {
+    public ResponseEntity<?> updateAuctionStatus(@NotNull @RequestParam Long goodsId) {
         boolean result = goodsService.updateAuctionStatus(goodsId, "stopped");
         return ResponseEntity.ok(null);
     }
