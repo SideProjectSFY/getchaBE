@@ -16,10 +16,12 @@ import java.time.LocalDateTime;
 public class Comment {
 
     private Long id;
-    private Long goods_id;
-    private Long writer_id;
-    private Long parent_id;
+    private Long goodsId;
+    private Long writerId;
+    private Long parentId;
     private String content;
-    private LocalDateTime created_at;
-    private LocalDateTime updated_at;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime deletedAt;
+
 }
