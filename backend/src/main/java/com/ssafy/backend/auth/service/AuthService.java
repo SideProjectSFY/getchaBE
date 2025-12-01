@@ -28,9 +28,5 @@ public interface AuthService {
      */
     LoginResponseDto login(LoginRequestDto request);
 
-    /**
-     * 관심 애니 검색
-     */
-    List<AnimeSelectionDto> searchAnime(String keyword);
 }
 

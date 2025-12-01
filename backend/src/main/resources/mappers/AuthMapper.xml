@@ -85,17 +85,4 @@
         </foreach>
     </select>
 
-    <!-- 애니 검색 -->
-    <select id="searchAnimeByKeyword" resultType="com.ssafy.backend.user.model.AnimeSelectionDto">
-        SELECT
-            id AS animeId,
-            title,
-            poster_url AS posterUrl
-        FROM tmdb_anime
-        WHERE title LIKE CONCAT('%', #{keyword}, '%')
-        ORDER BY popularity DESC, title ASC
-            LIMIT #{limit}
-    </select>
-
-
 </mapper>

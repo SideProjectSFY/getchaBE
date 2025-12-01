@@ -160,17 +160,6 @@ public class AuthServiceImpl implements AuthService {
 
 
     /**
-     * 관심 애니 검색
-     */
-    @Override
-    public List<AnimeSelectionDto> searchAnime(String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            throw new CustomException("검색어를 입력해주세요.", HttpStatus.BAD_REQUEST);
-        }
-        return authMapper.searchAnimeByKeyword(keyword);
-    }
-
-    /**
      * 관심 애니 유효성 검사
      */
     private List<Long> validateAnimeSelection(List<Long> ids) {

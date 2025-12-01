@@ -53,6 +53,9 @@ public class SecurityConfig {
                         // 로그인/회원가입 허용
                         .requestMatchers("/api/v1/auth/**").permitAll()
 
+                        // 애니 검색 (Swagger 테스트 허용)
+                        .requestMatchers("/api/v1/anime/**").permitAll()
+
                         // 나머지 API 인증 필요
                         .anyRequest().authenticated()
                 )

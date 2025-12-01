@@ -1,6 +1,5 @@
 package com.ssafy.backend.auth.model;
 
-import com.ssafy.backend.user.model.AnimeSelectionDto;
 import com.ssafy.backend.user.model.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -34,10 +33,4 @@ public interface AuthMapper {
      */
     int countAnimeByIds(@Param("animeIds") List<Long> animeIds);
 
-    /**
-     * 관심 애니 검색
-     */
-    List<AnimeSelectionDto> searchAnimeByKeyword(
-            @Param("keyword") String keyword
-    );
 }
