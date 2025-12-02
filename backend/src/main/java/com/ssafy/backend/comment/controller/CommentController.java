@@ -34,6 +34,8 @@ public class CommentController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "댓글 or 대댓글이 성공적으로 등록되었습니다."),
+            @ApiResponse(responseCode = "404", description = "존재하지 않는 굿즈 글입니다. or " +
+                    "부모 댓글이 존재하지 않습니다."),
             @ApiResponse(responseCode = "503", description = "댓글 or 대댓글 등록에 실패하였습니다")
     })
     @PostMapping

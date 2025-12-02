@@ -35,6 +35,16 @@ public class CommentServiceImpl implements CommentService {
         // TODO : 로그인 되었는지 체크 !
         Long writerId = 1L; // TODO : 로그인 기능 구현 전이어서 현재는 고정값
 
+        // 굿즈 글 존재 유무 확인
+        int checkGoodsId = commentMapper.checkGoodsId(commentRegister.getGoodsId());
+        if(checkGoodsId == 0) throw new NoSuchElementException("존재하지 않는 굿즈 글입니다.");
+
+        // 부모 댓글 존재 유무 확인
+        Long parentId = commentRegister.getParentId();
+        if(parentId != null) {
+            int checkParentId = commentMapper.checkParentId(parentId);
+            if(checkParentId == 0) throw new NoSuchElementException("부모 댓글이 존재하지 않습니다.");
+        }
 
         // parentId 가 null 이면 댓글, 대댓글이면 값이 존재한다.
         Comment comment = Comment.builder()
@@ -89,15 +99,10 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public void updateComment(CommentRequestDTO.CommentModify commentModify) {
         // TODO : 본인이 쓴 댓글인지 확인 필요 (토큰에서 가져오기)
-        Long writerId = 1L;
-        
-        Comment comment = Comment.builder()
-                .id(commentModify.getCommentId())
-                .writerId(writerId)
-                .content(commentModify.getContent())
-                .build();
+        Long loginUserId = 1L;
+        commentModify.setLoginUserId(loginUserId);
 
-        int updateResult = commentMapper.updateComment(comment);
+        int updateResult = commentMapper.updateComment(commentModify);
         if(updateResult < 1) throw new CustomException("댓글 or 대댓글 수정에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
 
     }
@@ -106,7 +111,7 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public void deleteComment(Long commentId) {
         // TODO : 본인이 쓴 댓글인지 확인 필요 (토큰에서 가져오기)
-        Long writerId = 1L;
+        Long loginUserId = 1L;
         Long parentId = null;
         LocalDateTime deletedAt = null;
 
@@ -126,13 +131,13 @@ public class CommentServiceImpl implements CommentService {
         // 대댓글이 존재하는 댓글일 경우, 
         if(replyCount > 0) {
             // soft delete 해서 '삭제된 댓글입니다' 처리
-            int softResult = commentMapper.softDeleteComment(commentId, writerId);
+            int softResult = commentMapper.softDeleteComment(commentId, loginUserId);
             if(softResult < 1) throw new CustomException("댓글 삭제에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
             return;
 
         } else { // 대댓글이 없는 댓글 or 대댓글일 경우
             // hard delete 해서 완전 삭제 처리 
-            int hardDelete = commentMapper.hardDeleteComment(commentId, writerId);
+            int hardDelete = commentMapper.hardDeleteComment(commentId, loginUserId);
             if(hardDelete < 1) throw new CustomException("댓글 or 대댓글 삭제에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
         }
 
@@ -141,7 +146,7 @@ public class CommentServiceImpl implements CommentService {
             // 대댓글 남아있는지 확인
             int reReplyCount = commentMapper.countChildCommentByParentId(parentId);
             // 대댓글이 없다면, 부모 댓글 hard delete 처리
-            if(reReplyCount < 1) commentMapper.hardDeleteComment(parentId, writerId);
+            if(reReplyCount < 1) commentMapper.hardDeleteComment(parentId, loginUserId);
         }
     }
 }
