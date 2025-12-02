@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RequiredArgsConstructor
@@ -105,6 +107,18 @@ public class CommentServiceImpl implements CommentService {
     public void deleteComment(Long commentId) {
         // TODO : 본인이 쓴 댓글인지 확인 필요 (토큰에서 가져오기)
         Long writerId = 1L;
+        Long parentId = null;
+        LocalDateTime deletedAt = null;
+
+        // 1) commentId에 대한 parent 정보와 soft delete 여부를 한 번에 조회
+        // commentId 가 부모 ID 일 경우 ->  둘다 null null 이 나올 것임
+        // 이건 parentId 가 null 이 아닐때만 확인해야하는것.
+        Map<String, Object> parentCommentMap = commentMapper.selectParentIdAndDeletedAtByCommentId(commentId);
+
+        if(!Objects.isNull(parentCommentMap)) {
+            parentId = (Long)parentCommentMap.get("parent_id");
+            deletedAt = ((Timestamp) parentCommentMap.get("deleted_at")).toLocalDateTime();
+        }
 
         // 댓글이든 대댓글이든, 자식 댓글이 있는지 확인할 수 있음 ! 
         int replyCount = commentMapper.countChildCommentByParentId(commentId);
@@ -114,24 +128,20 @@ public class CommentServiceImpl implements CommentService {
             // soft delete 해서 '삭제된 댓글입니다' 처리
             int softResult = commentMapper.softDeleteComment(commentId, writerId);
             if(softResult < 1) throw new CustomException("댓글 삭제에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
-
             return;
-        } else { // 대댓글이 없는 댓글 or 대댓글일 경우 
+
+        } else { // 대댓글이 없는 댓글 or 대댓글일 경우
             // hard delete 해서 완전 삭제 처리 
             int hardDelete = commentMapper.hardDeleteComment(commentId, writerId);
             if(hardDelete < 1) throw new CustomException("댓글 or 대댓글 삭제에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
+        }
 
-            // 대댓글의 부모 ID 와 soft delete 여부 조회
-            Map<String, Object> parentCommentMap = commentMapper.selectParentIdAndDeletedAtByCommentId(commentId);
-            Long parentId = (Long)parentCommentMap.get("parentId");
-
-            // soft delete 가 된 부모댓글 일 경우
-            if(!Objects.isNull(parentCommentMap.get("deleted_at")) && parentId != null) {
-                // 대댓글 남아있는지 확인
-                int reReplyCount = commentMapper.countChildCommentByParentId(parentId);
-                // 대댓글이 없다면, 부모 댓글 hard delete 처리
-                if(reReplyCount < 1) commentMapper.hardDeleteComment(commentId, writerId);
-            }
+        // soft delete 가 된 부모댓글 일 경우
+        if(deletedAt != null && parentId != null) {
+            // 대댓글 남아있는지 확인
+            int reReplyCount = commentMapper.countChildCommentByParentId(parentId);
+            // 대댓글이 없다면, 부모 댓글 hard delete 처리
+            if(reReplyCount < 1) commentMapper.hardDeleteComment(parentId, writerId);
         }
     }
 }

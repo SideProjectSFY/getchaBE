@@ -35,7 +35,7 @@
         UPDATE comment
         SET content = #{content},
             updated_at = NOW()
-        WHERE id = #{commentId}
+        WHERE id = #{id}
           AND writer_id = #{writerId}
           AND deleted_at IS NULL;
     </update>
@@ -48,16 +48,19 @@
     </select>
 
     <!-- 대댓글의 부모ID와 soft delete 여부 조회 -->
-    <select id="selectParentIdAndDeletedAtByCommentId" parameterType="map">
+    <select id="selectParentIdAndDeletedAtByCommentId" parameterType="Long" resultType="java.util.Map">
         SELECT
-            parent_id,
-            deleted_at
-        FROM comment
-        WHERE id = #{commentId}
+            c.parent_id,
+            c2.deleted_at
+        FROM comment c
+            LEFT JOIN comment c2
+                ON c.parent_id = c2.id
+        WHERE c.id = #{commentId}
+          AND c.parent_id IS NOT NULL
     </select>
 
     <!-- soft delete 처리 -->
-    <update id="softDeleteComment" parameterType="map">
+    <update id="softDeleteComment" parameterType="java.util.Map">
         UPDATE comment
         SET deleted_at = now(),
             content = '(삭제된 댓글입니다.)'
@@ -66,7 +69,7 @@
     </update>
 
     <!-- hard delete 처리 -->
-    <delete id="hardDeleteComment" parameterType="map">
+    <delete id="hardDeleteComment" parameterType="java.util.Map">
         DELETE FROM comment
         WHERE id = #{commentId}
           AND writer_id = #{writerId}
