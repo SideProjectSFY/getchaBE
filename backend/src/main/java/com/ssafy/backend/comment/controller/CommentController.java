@@ -34,7 +34,7 @@ public class CommentController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "댓글 or 대댓글이 성공적으로 등록되었습니다."),
-            @ApiResponse(responseCode = "503", description = "")
+            @ApiResponse(responseCode = "503", description = "댓글 or 대댓글 등록에 실패하였습니다")
     })
     @PostMapping
     public ResponseEntity<String> postComment(@Valid @ModelAttribute CommentRequestDTO.CommentRegister commentRegister) {
@@ -48,7 +48,7 @@ public class CommentController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "댓글 or 대댓글이 성공적으로 수정되었습니다."),
-            @ApiResponse(responseCode = "503", description = "")
+            @ApiResponse(responseCode = "503", description = "댓글 or 대댓글 수정에 실패하였습니다")
     })
     @PutMapping
     public ResponseEntity<String> updateComment(@Valid @ModelAttribute CommentRequestDTO.CommentModify commentModify) {
@@ -60,6 +60,10 @@ public class CommentController {
             summary = "댓글 or 대댓글 목록 조회",
             description = "댓글 or 대댓글 목록을 조회합니다."
     )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200"),
+            @ApiResponse(responseCode = "404", description = "등록된 댓글이 없습니다."),
+    })
     @GetMapping
     public ResponseEntity<List<CommentResponseDTO>> getAllComment(@NotNull @RequestParam Long goodsId) {
         List<CommentResponseDTO> resultList = commentService.getAllComment(goodsId);
@@ -73,7 +77,7 @@ public class CommentController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "댓글 or 대댓글이 성공적으로 삭제되었습니다."),
-            @ApiResponse(responseCode = "503", description = "")
+            @ApiResponse(responseCode = "503", description = "댓글 or 대댓글 삭제에 실패하였습니다")
     })
     @DeleteMapping
     public ResponseEntity<String> deleteComment(@NotNull @RequestParam Long commentId) {
