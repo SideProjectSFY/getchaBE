@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.backend.bid.model.BidMapper">
+
+    <!-- 경매에 입찰한 참여자 리스트 조회 -->
+    <select id="selectBidParticipantByGoodsId" parameterType="Long" resultType="com.ssafy.backend.bid.model.BidResponseDto$BidParticipant">
+        SELECT b.id AS bidId,
+            bidder_id,
+            u.nickname AS bidderNickName,
+            ta.poster_url AS bidderProfileFilePath,
+            bid_amount,
+            is_highest
+        FROM bid b
+            LEFT JOIN user u
+                ON b.bidder_id = u.id
+            LEFT JOIN tmdb_anime ta
+                ON ta.id = u.liked_anime_id1
+        WHERE goods_id = #{goodsId}
+        ORDER BY bid_amount DESC;
+    </select>
+
+    <!-- 굿즈 글에 대한 금액 및 입찰자 정보 조회 -->
+    <select id="selectGoodsPriceAndBidInfoByGoodsId" parameterType="Long" resultType="com.ssafy.backend.bid.model.BidInternalDto$GoodsPriceBidInfo">
+        SELECT
+            g.start_price,
+            g.instant_buy_price,
+            b.id AS bidId,
+            b.bidder_id,
+            b.bid_amount AS currentBidAmount
+        FROM goods g
+            LEFT JOIN bid b
+                ON b.goods_id = g.id
+                    AND b.is_highest IS TRUE
+        WHERE g.id = #{goodsId}
+        FOR UPDATE;
+    </select>
+
+    <!-- 현재 최고가 여부 false 로 변경 -->
+    <update id="updateIsHighestByGoodsId" parameterType="Long">
+        UPDATE bid
+        SET is_highest = false
+        WHERE goods_id = #{goodsId}
+          AND is_highest IS TRUE;
+    </update>
+
+    <!-- 예치금 unlock -->
+    <update id="updateToUnlockBidAmount" parameterType="com.ssafy.backend.bid.model.BidInternalDto$CoinWalletBalance">
+        UPDATE coin_wallet
+        SET balance = balance + #{bidAmount},
+            locked_balance = locked_balance - #{bidAmount}
+        WHERE user_id = #{beforeUserId};
+    </update>
+
+    <!-- 예치금 lock -->
+    <update id="updateToLockBidAmount" parameterType="com.ssafy.backend.bid.model.BidInternalDto$CoinWalletBalance">
+        UPDATE coin_wallet
+        SET balance = balance - #{bidAmount},
+        locked_balance = locked_balance + #{bidAmount}
+        WHERE user_id = #{loginUserId};
+    </update>
+
+    <!-- 입찰자의 거래내역 등록 -->
+    <insert id="insertWalletHistory" parameterType="com.ssafy.backend.bid.model.BidInternalDto$WalletHistoryAndUserId">
+        INSERT INTO wallet_history (
+            wallet_id,
+            goods_id,
+            transaction_type,
+            amount,
+            description
+        )
+        VALUES (
+            (SELECT id FROM coin_wallet WHERE user_id = #{userId}),
+            #{goodsId},
+            #{transactionType},
+            #{amount},
+            CONCAT((select title from goods where id = #{goodsId}), ' ', #{description})
+        );
+    </insert>
+
+    <!-- 현재 최고가로 입찰 등록 -->
+    <insert id="insertCurrentBidAmount" parameterType="Bid">
+        INSERT INTO bid (goods_id, bidder_id, bid_amount, is_highest)
+        VALUES (#{goodsId}, #{bidderId}, #{bidAmount}, true)
+    </insert>
+
+</mapper>
