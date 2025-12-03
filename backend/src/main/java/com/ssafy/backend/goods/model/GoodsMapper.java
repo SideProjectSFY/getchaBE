@@ -47,31 +47,33 @@ public interface GoodsMapper {
 
     /**
      * 굿즈 상세 조회
-     * @param goodsId 굿즈ID(pk)
+     * @param goodsId 조회할 굿즈ID(pk)
+     * @param loginUserId 로그인한 사용자ID(pk)
      * @return 굿즈ID 로 조회한 굿즈 정보
-     * */
-    Goods selectGoodsById(Long goodsId);
+     */
+    GoodsResponseDto.GoodsDetail selectGoodsById(Long goodsId, Long loginUserId);
 
     /**
      * 특정 굿즈 글의 다중 이미지 리스트 조회
      * @param goodsId 굿즈ID(pk)
      * @return 굿즈ID 로 조회한 굿즈 다중 이미지
      * */
-    GoodsImage selectImagesByGoodsId(Long goodsId);
+    List<GoodsResponseDto.GoodsDetailImage> selectImagesByGoodsId(Long goodsId);
 
     /**
      * 굿즈 글 정보 수정
-     * @param goods 수정할 굿즈 정보
+     * @param goodsModify 수정할 굿즈 정보
      * @return 굿즈 글 수정 결과 반환
      * */
-    int updateGoods(Goods goods);
+    int updateGoods(GoodsRequestDto.GoodsModify goodsModify);
 
     /**
      * 굿즈 글 삭제 (*경매 대기/종료 일 경우)
      * @param goodsId 삭제할 굿즈ID
+     * @param loginUserId 로그인한 사용자ID(pk)
      * @return 굿즈 글 삭제 결과 반환
-     * */
-    int deleteGoods(Long goodsId);
+     */
+    int deleteGoods(Long goodsId, Long loginUserId);
 
     /**
      * 특정 굿즈 경매 상태 조회

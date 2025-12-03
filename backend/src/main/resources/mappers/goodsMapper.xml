@@ -114,32 +114,48 @@
     </select>
 
     <!-- 굿즈 상세 조회 -->
-    <select id="selectGoodsById" parameterType="Long" resultType="Goods">
+    <select id="selectGoodsById" parameterType="Long" resultType="com.ssafy.backend.goods.model.GoodsResponseDto$GoodsDetail">
         SELECT
-            g.id,
+            g.id AS goodsId,
             anime_id,
             seller_id,
-            u.nickname as sellerNickName,
-            ta.poster_url as sellerProfileFilePath,
+            u.nickname AS sellerNickName,
+            ta.poster_url AS sellerProfileFilePath,
             category,
-            ta.title as animeTitle,
+            ta.title AS animeTitle,
             g.title,
             description,
             start_price,
+            b.bid_amount AS currentBidAmount,
             instant_buy_price,
             auction_status,
             g.created_at,
             auction_end_at,
-            count(*) as wishCount
+            (
+                SELECT count(*)
+                FROM wishlist
+                WHERE goods_id = g.id
+            ) AS wishCount,
+            (
+                SELECT EXISTS(
+                    SELECT 1 FROM wishlist
+                    WHERE goods_id = g.id
+                    AND user_id = #{loginUserId})
+            ) AS isWish,
+            (g.seller_id = #{loginUserId}) AS isSeller
         FROM goods g
-            INNER JOIN user u ON u.id = g.seller_id
-            LEFT JOIN wishlist w ON w.goods_id = g.id
-            LEFT JOIN tmdb_anime ta ON ta.id = g.anime_id and ta.id = u.liked_anime_id1
-        WHERE g.id = #{goodsId};
+            INNER JOIN user u
+                ON u.id = g.seller_id
+            LEFT JOIN tmdb_anime ta
+                ON ta.id = g.anime_id and ta.id = u.liked_anime_id1
+            INNER JOIN bid b
+                ON b.goods_id = g.id
+        WHERE g.id = #{goodsId}
+          AND b.is_highest = TRUE
     </select>
 
     <!-- 특정 굿즈 글의 다중 이미지 리스트 조회 -->
-    <select id="selectImagesByGoodsId" parameterType="Long" resultType="GoodsImage">
+    <select id="selectImagesByGoodsId" parameterType="Long" resultType="com.ssafy.backend.goods.model.GoodsResponseDto$GoodsDetailImage">
         select id, goods_id, file_path, sort_order
         from goods_image
         where goods_id = #{goodsId}
@@ -147,7 +163,7 @@
     </select>
 
     <!-- 굿즈 글 수정 (*경매 대기 일 경우에만 가능)-->
-    <update id="updateGoods" parameterType="Goods">
+    <update id="updateGoods" parameterType="com.ssafy.backend.goods.model.GoodsRequestDto$GoodsModify">
         UPDATE goods
         SET
             title = #{title},
@@ -160,6 +176,7 @@
             updated_at = NOW()
         WHERE auction_status = 'WAIT'
             AND id = #{goodsId}
+            AND seller_id = #{loginUserId}
             AND deleted_at IS NULL;
     </update>
 
@@ -169,6 +186,7 @@
             SET deleted_at = NOW()
         WHERE id = #{goodsId}
             AND auction_status != 'PROCEEDING'
+            AND seller_id = #{loginUserId}
     </update>
 
     <!-- 특정 굿즈 경매 상태 조회 -->

@@ -121,10 +121,14 @@ public class GoodsServiceImpl implements GoodsService {
 
     @Override
     public GoodsResponseDto.GoodsDetailAll getGoodsById(Long goodsId) {
+        // TODO : 본인이 쓴 글인지 확인
+        Long loginUserId = 1L;
 
         // 굿즈 데이터
+        GoodsResponseDto.GoodsDetail goodsDetail = goodsMapper.selectGoodsById(goodsId, loginUserId);
 
-        // 댓글 데이터
+        // 이미지 리스트 조회
+        List<GoodsResponseDto.GoodsDetailImage> imageList = goodsMapper.selectImagesByGoodsId(goodsId);
 
         // 입찰 관련 데이터 (+경매 참여자)
 
@@ -136,7 +140,16 @@ public class GoodsServiceImpl implements GoodsService {
     @Override
     @Transactional
     public boolean updateGoods(GoodsRequestDto.GoodsModify goodsModify, MultipartFile[] files) {
+        // TODO : 본인이 쓴 글인지 확인하는 과정 핋요
+        Long loginUserId = 1L;
+
         // 1. duration 이 update 되었다면 auction_end_at 도 계산해서 update
+
+        // 굿즈 데이터 수정
+
+        // 이미지 리스트 수정
+
+
         return false;
     }
 
@@ -144,12 +157,13 @@ public class GoodsServiceImpl implements GoodsService {
     @Transactional
     public void deleteGoods(Long goodsId) {
         // TODO : 본인이 쓴 글만 삭제가능 (userId 정보와 굿즈글의 sellerId 비교 후 삭제)
+        Long loginUserId = 1L;
 
         // 상태 체크
         AuctionStatus auctionStatus = goodsMapper.selectAuctionStatusByGoodsId(goodsId);
         // 진행중이 아닐 때만 삭제 (경매 대기 or 완료 일 때만 삭제가능)
         if(auctionStatus != AuctionStatus.PROCEEDING) {
-            int deleteResult = goodsMapper.deleteGoods(goodsId);
+            int deleteResult = goodsMapper.deleteGoods(goodsId, loginUserId);
             if(deleteResult < 1) throw new CustomException("굿즈 글 삭제에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
 
         } else {

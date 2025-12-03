@@ -56,6 +56,9 @@ public class GoodsRequestDto {
     @Getter
     @Setter
     public static class GoodsModify {
+        @Schema(hidden = true)
+        private Long loginUserId;
+
         @NotBlank(message = "굿즈ID 는 필수값입니다.")
         private Long goodsId;
 
