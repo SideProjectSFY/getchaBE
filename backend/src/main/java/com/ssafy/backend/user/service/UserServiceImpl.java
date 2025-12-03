@@ -51,7 +51,9 @@ public class UserServiceImpl implements UserService {
             throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
         }
 
-        user = User.builder()
+        validateLikedAnimeIds(request);
+
+        User updatePayload = User.builder()
                 .id(userId)
                 .nickname(request.getNickname())
                 .accountNum(request.getAccountNum())
@@ -61,7 +63,7 @@ public class UserServiceImpl implements UserService {
                 .likedAnimeId3(request.getLikedAnimeId3())
                 .build();
 
-        userMapper.updateUser(user);
+        userMapper.updateUser(updatePayload);
 
         List<AnimeSelectionDto> likedAnimes = userMapper.findUserLikedAnimes(userId);
 
@@ -74,6 +76,14 @@ public class UserServiceImpl implements UserService {
                 .accountBank(request.getAccountBank())
                 .likedAnimes(likedAnimes)
                 .build();
+    }
+
+    private void validateLikedAnimeIds(UserRequestDto request) {
+        if (request.getLikedAnimeId1() == null
+                || request.getLikedAnimeId2() == null
+                || request.getLikedAnimeId3() == null) {
+            throw new CustomException("관심 애니메이션 3개를 모두 선택해주세요.", HttpStatus.BAD_REQUEST);
+        }
     }
 
     /**

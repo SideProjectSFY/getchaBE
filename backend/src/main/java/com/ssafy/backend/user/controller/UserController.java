@@ -33,11 +33,11 @@ public class UserController {
      */
     @GetMapping("/me")
     @Operation(summary = "내 프로필 조회")
-    public ResponseEntity<ApiResponse<UserResponseDto>> getMyProfile(
+    public ResponseEntity<UserResponseDto> getMyProfile(
             HttpServletRequest request
     ) {
         Long userId = extractUserId(request);
-        return ResponseEntity.ok(ApiResponse.ok(userService.getMyProfile(userId)));
+        return ResponseEntity.ok(userService.getMyProfile(userId));
     }
 
     /**
@@ -45,12 +45,12 @@ public class UserController {
      */
     @PutMapping("/me")
     @Operation(summary = "내 프로필 수정")
-    public ResponseEntity<ApiResponse<UserResponseDto>> updateMyProfile(
+    public ResponseEntity<UserResponseDto> updateMyProfile(
             HttpServletRequest request,
             @RequestBody UserRequestDto dto
     ) {
         Long userId = extractUserId(request);
-        return ResponseEntity.ok(ApiResponse.ok(userService.updateMyProfile(userId, dto)));
+        return ResponseEntity.ok(userService.updateMyProfile(userId, dto));
     }
 
     /**
@@ -58,11 +58,11 @@ public class UserController {
      */
     @DeleteMapping("/me")
     @Operation(summary = "회원 탈퇴")
-    public ResponseEntity<ApiResponse<String>> deleteMyAccount(
+    public ResponseEntity<String> deleteMyAccount(
             HttpServletRequest request
     ) {
         Long userId = extractUserId(request);
         userService.deleteMyAccount(userId);
-        return ResponseEntity.ok(ApiResponse.ok("회원 탈퇴 처리 완료"));
+        return ResponseEntity.ok("회원 탈퇴 처리 완료");
     }
 }
