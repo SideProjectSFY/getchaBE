@@ -46,7 +46,7 @@ public class BidController {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "403", description = "존재하지 않는 굿즈 입니다."),
     })
-    @GetMapping
+    @GetMapping("/participant")
     public ResponseEntity<List<BidResponseDto.BidParticipant>> getAllParticipant(@NotNull @RequestParam Long goodsId) {
         List<BidResponseDto.BidParticipant> resultList = bidService.getAllParticipant(goodsId);
         return ResponseEntity.ok(resultList);
