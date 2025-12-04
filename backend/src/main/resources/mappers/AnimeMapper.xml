@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.backend.anime.model.AnimeMapper">
+    <!-- 1. 검색어로 애니 조회 -->
+    <select id="findAnimeByKeyword" parameterType="string" resultType="com.ssafy.backend.anime.model.TmdbAnimeEntityDto">
+        SELECT
+            id,
+            title,
+            poster_url AS postUrl,
+            overview,
+            vote_average AS voteAverage,
+            vote_count AS voteCount,
+            popularity
+        FROM tmdb_anime
+        WHERE title LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY popularity DESC, title ASC
+    </select>
+
+    <!-- 2. DB 내 애니 저장 -->
+    <insert id="insertAnime" parameterType="com.ssafy.backend.anime.model.TmdbAnimeEntityDto">
+        INSERT INTO tmdb_anime (
+            id,
+            title,
+            poster_url,
+            overview,
+            vote_average,
+            vote_count,
+            popularity
+        )
+        VALUES (
+            #{id},
+            #{title},
+            #{postUrl},
+            #{overview},
+            #{voteAverage},
+            #{voteCount},
+            #{popularity}
+        )
+        <!--키가 중복되면 insert 대신 update-->
+        ON DUPLICATE KEY UPDATE
+            title = VALUES(title),
+            poster_url = VALUES(poster_url),
+            overview = VALUES(overview),
+            vote_average = VALUES(vote_average),
+            vote_count = VALUES(vote_count),
+            popularity = VALUES(popularity),
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+
+</mapper>
+
