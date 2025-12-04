@@ -45,21 +45,37 @@
           AND is_highest IS TRUE;
     </update>
 
-    <!-- 예치금 unlock -->
-    <update id="updateToUnlockBidAmount" parameterType="com.ssafy.backend.bid.model.BidInternalDto$CoinWalletBalance">
+    <!-- 예치금 unlock/lock/정산 -->
+    <update id="updateBalanceStatus" parameterType="com.ssafy.backend.bid.model.BidInternalDto$CoinWalletBalance">
         UPDATE coin_wallet
-        SET balance = balance + #{bidAmount},
-            locked_balance = locked_balance - #{bidAmount}
-        WHERE user_id = #{beforeUserId};
+        <set>
+            <if test="balanceStatus != null">
+                <choose>
+                    <when test="balanceStatus.name() == 'BIDUNLOCK'">
+                        balance = balance + #{bidAmount},
+                        locked_balance = locked_balance - #{bidAmount}
+                    </when>
+                    <when test="balanceStatus.name() == 'BIDLOCK'">
+                        balance = balance - #{bidAmount},
+                        locked_balance = locked_balance + #{bidAmount}
+                    </when>
+                    <when test="balanceStatus.name() == 'EXPENSE'">
+                        balance = balance - #{bidAmount}
+                    </when>
+                    <otherwise>
+                        balance = balance
+                    </otherwise>
+                </choose>
+            </if>
+        </set>
+        <where>
+            user_id = #{userId}
+        </where>
+        <if test="balanceStatus.name() != 'BIDUNLOCK'">
+            AND balance >= #{bidAmount}
+        </if>
     </update>
 
-    <!-- 예치금 lock -->
-    <update id="updateToLockBidAmount" parameterType="com.ssafy.backend.bid.model.BidInternalDto$CoinWalletBalance">
-        UPDATE coin_wallet
-        SET balance = balance - #{bidAmount},
-        locked_balance = locked_balance + #{bidAmount}
-        WHERE user_id = #{loginUserId};
-    </update>
 
     <!-- 입찰자의 거래내역 등록 -->
     <insert id="insertWalletHistory" parameterType="com.ssafy.backend.bid.model.BidInternalDto$WalletHistoryAndUserId">
@@ -79,10 +95,17 @@
         );
     </insert>
 
+    <!--  지갑 잔액 조회 (FOR UPDATE) -->
+    <select id="selectCoinWalletBalanceForUpdate" parameterType="Long" resultType="int">
+        SELECT balance
+        FROM coin_wallet
+        WHERE user_id = #{loginUserId}
+        FOR UPDATE;
+    </select>
+
     <!-- 현재 최고가로 입찰 등록 -->
     <insert id="insertCurrentBidAmount" parameterType="Bid">
         INSERT INTO bid (goods_id, bidder_id, bid_amount, is_highest)
         VALUES (#{goodsId}, #{bidderId}, #{bidAmount}, true)
     </insert>
-
 </mapper>

@@ -15,7 +15,7 @@ public interface BidMapper {
     List<BidResponseDto.BidParticipant> selectBidParticipantByGoodsId(Long goodsId);
 
     /**
-     * 굿즈 글에 대한 금액 및 입찰자 정보 조회
+     * 굿즈 글에 대한 금액 및 입찰자 정보 조회 (For update)
      * @param goodsId 굿즈Id(pk)
      * @return 굿즈 글에 대한 금액 및 입찰자 정보 결과 반환
      */
@@ -29,18 +29,11 @@ public interface BidMapper {
     int updateIsHighestByGoodsId(Long goodsId);
 
     /**
-     * 예치금 unlock 로 업데이트
+     * 금액관련 상태 업데이트
      * @param coinWalletBalance 입찰금액 및 이전 최고 입찰자의 정보
-     * @return 예치금 업데이트 결과 반환
+     * @return 금액 업데이트 결과 반환
      */
-    int updateToUnlockBidAmount(BidInternalDto.CoinWalletBalance coinWalletBalance);
-
-    /**
-     * 예치금 lock 로 업데이트
-     * @param coinWalletBalance 입찰금액 및 로그인한 사용자 정보
-     * @return 예치금 업데이트 결과 반환
-     */
-    int updateToLockBidAmount(BidInternalDto.CoinWalletBalance coinWalletBalance);
+    int updateBalanceStatus(BidInternalDto.CoinWalletBalance coinWalletBalance);
 
     /**
      * 거래 내역 등록할 정보
@@ -48,6 +41,13 @@ public interface BidMapper {
      * @return 등록 결과 반환
      */
     int insertWalletHistory(BidInternalDto.WalletHistoryAndUserId walletHistoryAndUserId);
+
+    /**
+     * 지갑 잔액 조회 (FOR UPDATE)
+     * @param loginUserId 로그인한 사용자Id(pk)
+     * @return 잔액 조회
+     */
+    Integer selectCoinWalletBalanceForUpdate(Long loginUserId);
 
     /**
      * 등록할 입찰 데이터

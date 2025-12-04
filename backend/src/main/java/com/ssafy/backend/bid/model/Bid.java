@@ -10,9 +10,9 @@ import java.time.LocalDateTime;
 public class Bid {
 
     private Long id;
-    private Long goods_id;
-    private Long bidder_id;
-    private int bid_amount;
-    private boolean is_highest;
-    private LocalDateTime created_at;
+    private Long goodsId;
+    private Long bidderId;
+    private int bidAmount;
+    private boolean isHighest;
+    private LocalDateTime createdAt;
 }

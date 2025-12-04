@@ -22,11 +22,11 @@ public class BidInternalDto {
     @AllArgsConstructor
     public static class GoodsPriceBidInfo {
 
-        private int startPrice;
-        private int instantBuyPrice;
+        private Integer startPrice;
+        private Integer instantBuyPrice;
         private Long bidId;
         private Long bidderId;
-        private int currentBidAmount;          // 현재 최고가 금액
+        private Integer currentBidAmount;          // 현재 최고가 금액
 
     }
 
@@ -37,12 +37,12 @@ public class BidInternalDto {
     @AllArgsConstructor
     public static class CoinWalletBalance {
 
-        @Schema(name = "loginUserId", description = "현재 최고입찰자Id(pk) - 로그인한 사용자")
-        private Long loginUserId;
-
-        @Schema(name = "beforeUserId", description = "이전 최고입찰자Id(pk)")
-        private Long beforeUserId;
+        @Schema(name = "userId", description = "로그인한 사용자Id(pk) or 이전 최고입찰자Id(pk)")
+        private Long userId;
         private int bidAmount;
+
+        @Schema(description = "금액처리상태")
+        private TransactionType balanceStatus;
     }
 
     @Schema(description = "거래 내역 등록 DTO")

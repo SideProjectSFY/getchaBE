@@ -18,7 +18,7 @@ public class BidResponseDto {
         private Long bidderId;
         private String bidderNickName;
         private String bidderProfileFilePath;
-        private int bid_amount;
+        private int bidAmount;
         private boolean isHighest;
     }
 }
