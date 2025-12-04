@@ -10,5 +10,7 @@ public enum TransactionType {
     BIDLOCK,
     BIDUNLOCK,
     INCOME,
-    EXPENSE;
+    EXPENSE,
+
+    SETTLE;             // TransactionType 에는 없는 eunm 값
 }

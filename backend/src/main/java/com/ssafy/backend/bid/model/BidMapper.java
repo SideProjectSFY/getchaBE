@@ -1,5 +1,6 @@
 package com.ssafy.backend.bid.model;
 
+import com.ssafy.backend.goods.model.Goods;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -55,5 +56,11 @@ public interface BidMapper {
      * @return 등록 결과 반환
      */
     int insertCurrentBidAmount(Bid bid);
+
+    /**
+     * 경매 종료 대상 조회
+     * @return 경매 종료 대상 리스트 반환
+     */
+    List<Goods> selectEndedAuctions();
 
 }

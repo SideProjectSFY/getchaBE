@@ -6,10 +6,12 @@ import com.ssafy.backend.comment.model.CommentMapper;
 import com.ssafy.backend.common.enums.AuctionStatus;
 import com.ssafy.backend.common.enums.TransactionType;
 import com.ssafy.backend.common.exception.CustomException;
+import com.ssafy.backend.goods.model.Goods;
 import com.ssafy.backend.goods.model.GoodsMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -265,5 +267,84 @@ public class BidServiceImpl implements BidService {
         }
 
         return participants;
+    }
+
+//    @Scheduled(fix)
+    @Transactional
+    public void proceessEndedAuctions() {
+        List<Goods> endedAuctions = bidMapper.selectEndedAuctions();
+
+        if(endedAuctions.isEmpty()) return;
+
+        for(Goods goods : endedAuctions) {
+            Long goodsId = goods.getId();
+            Long sellerId = goods.getSellerId();
+
+            // 1. 최고 입찰 조회
+            BidInternalDto.GoodsPriceBidInfo highestBid = bidMapper.selectGoodsPriceAndBidInfoByGoodsId(goodsId);
+
+            if(highestBid.getBidId() == null) {
+                // 입찰 없으면 패찰 처리
+                int updateStatusResult = goodsMapper.updateAuctionStatus(goodsId, AuctionStatus.STOPPED);
+                if(updateStatusResult < 1)
+                    throw new CustomException("경매 상태 업데이트에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
+                continue;
+            }
+
+            Long highestBidderId = highestBid.getBidderId();
+            Integer highestBidAmount = highestBid.getCurrentBidAmount();
+
+            // 2. 최고 입찰자 Lock → Pay
+            BidInternalDto.CoinWalletBalance coinWalletBalance = BidInternalDto.CoinWalletBalance.builder()
+                    .bidAmount(highestBidAmount)
+                    .userId(highestBidderId)
+                    .balanceStatus(TransactionType.SETTLE) // 예치금Lock 된 금액을 실제 지불 
+                    .build();
+
+            int settleResult = bidMapper.updateBalanceStatus(coinWalletBalance);
+            if (settleResult < 1) throw new CustomException("낙찰 금액 정산에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
+
+            // 3. wallet_history 에 (출금) 정산 완료 기록
+            BidInternalDto.WalletHistoryAndUserId walletHistory = BidInternalDto.WalletHistoryAndUserId.builder()
+                    .userId(highestBidderId)
+                    .goodsId(goodsId)
+                    .transactionType(TransactionType.EXPENSE)
+                    .amount(highestBidAmount)
+                    .description("낙찰")
+                    .build();
+
+            int settleHistoryResult = bidMapper.insertWalletHistory(walletHistory);
+            if (settleHistoryResult < 1)
+                throw new CustomException("낙찰 거래 내역 기록에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
+
+            // 4. 판매자에게 입금
+            coinWalletBalance = BidInternalDto.CoinWalletBalance.builder()
+                    .bidAmount(highestBidAmount)
+                    .userId(sellerId)
+                    .balanceStatus(TransactionType.INCOME) // 입금
+                    .build();
+
+            int incomeResult = bidMapper.updateBalanceStatus(coinWalletBalance);
+            if (incomeResult < 1) throw new CustomException("입금 금액 정산에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
+
+            // 5. wallet_history 에 (입금) 정산 완료 기록
+            walletHistory = BidInternalDto.WalletHistoryAndUserId.builder()
+                    .userId(sellerId)
+                    .goodsId(goodsId)
+                    .transactionType(TransactionType.INCOME)
+                    .amount(highestBidAmount)
+                    .description("입금")
+                    .build();
+
+            int incomeHistoryResult = bidMapper.insertWalletHistory(walletHistory);
+            if (incomeHistoryResult < 1)
+                throw new CustomException("입금 거래 내역 기록에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
+            
+            // 6. 경매상태 '낙찰' 로 변경 
+            int updateStatusResult = goodsMapper.updateAuctionStatus(goodsId, AuctionStatus.COMPLETED);
+            if(updateStatusResult < 1)
+                throw new CustomException("경매 상태 업데이트에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
+            
+        }
     }
 }

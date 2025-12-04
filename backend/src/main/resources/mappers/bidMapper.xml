@@ -67,7 +67,7 @@
                         balance = balance + #{bidAmount}
                     </when>
                     <otherwise>
-                        balance = balance
+                        locked_balance = locked_balance - #{bidAmount}
                     </otherwise>
                 </choose>
             </if>
@@ -112,4 +112,12 @@
         INSERT INTO bid (goods_id, bidder_id, bid_amount, is_highest)
         VALUES (#{goodsId}, #{bidderId}, #{bidAmount}, true)
     </insert>
+
+    <!-- 종료 대상 경매 조회 -->
+    <select id="selectEndedAuctions" resultType="Goods">
+        SELECT *
+        FROM goods
+        WHERE auction_end_at <![CDATA[<=]]> NOW()
+          AND auction_status IN ('WAIT', 'PROCEEDING')
+    </select>
 </mapper>
