@@ -8,6 +8,7 @@
         SELECT count(*)
         FROM goods
         WHERE id = #{goodsId}
+          AND DELETED_AT IS NULL
     </select>
 
     <select id="checkParentId" parameterType="Long">
