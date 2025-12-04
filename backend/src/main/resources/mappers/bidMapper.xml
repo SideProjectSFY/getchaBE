@@ -24,6 +24,7 @@
     <!-- 굿즈 글에 대한 금액 및 입찰자 정보 조회 -->
     <select id="selectGoodsPriceAndBidInfoByGoodsId" parameterType="Long" resultType="com.ssafy.backend.bid.model.BidInternalDto$GoodsPriceBidInfo">
         SELECT
+            g.seller_id,
             g.start_price,
             g.instant_buy_price,
             b.id AS bidId,
@@ -62,6 +63,9 @@
                     <when test="balanceStatus.name() == 'EXPENSE'">
                         balance = balance - #{bidAmount}
                     </when>
+                    <when test="balanceStatus.name() == 'INCOME'">
+                        balance = balance + #{bidAmount}
+                    </when>
                     <otherwise>
                         balance = balance
                     </otherwise>
@@ -71,7 +75,7 @@
         <where>
             user_id = #{userId}
         </where>
-        <if test="balanceStatus.name() != 'BIDUNLOCK'">
+        <if test="balanceStatus.name() == 'BIDLOCK' or balanceStatus.name() == 'EXPENSE'">
             AND balance >= #{bidAmount}
         </if>
     </update>

@@ -22,6 +22,7 @@ public class BidInternalDto {
     @AllArgsConstructor
     public static class GoodsPriceBidInfo {
 
+        private Long sellerId;
         private Integer startPrice;
         private Integer instantBuyPrice;
         private Long bidId;

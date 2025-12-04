@@ -31,7 +31,7 @@ public class BidServiceImpl implements BidService {
     @Transactional
     public void postBidForGoods(BidRequestDto.BidRegister bidRegister) {
         // TODO : 토큰 정보에서 로그인 ID 뽑아오기
-        Long loginUserId = 10L;
+        Long loginUserId = 3L;
         final int limitAmount = 5_000_000;
 
         // 가상화페DTO, 거래내역DTO 선언
@@ -61,6 +61,7 @@ public class BidServiceImpl implements BidService {
         BidInternalDto.GoodsPriceBidInfo info = bidMapper.selectGoodsPriceAndBidInfoByGoodsId(bidRegister.getGoodsId());
         if(info == null) throw new NoSuchElementException("존재하지 않는 굿즈 글입니다");
 
+        Long sellerId = info.getSellerId();
         Long bidId = info.getBidId();                           // null 이면 첫 입찰
         Integer startPrice = info.getStartPrice();
         Integer currentBidAmount = info.getCurrentBidAmount();  // null 이면 첫 입찰
@@ -196,6 +197,29 @@ public class BidServiceImpl implements BidService {
             int payHistoryResult = bidMapper.insertWalletHistory(walletHistory);
             if (payHistoryResult < 1)
                 throw new CustomException("낙찰 거래 내역 기록에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
+
+            // 6-4. 판매자에게 입금
+            coinWalletBalance = BidInternalDto.CoinWalletBalance.builder()
+                    .bidAmount(bidAmount)
+                    .userId(sellerId)
+                    .balanceStatus(TransactionType.INCOME) // 입금
+                    .build();
+
+            int incomeResult = bidMapper.updateBalanceStatus(coinWalletBalance);
+            if (incomeResult < 1) throw new CustomException("입금 금액 정산에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
+
+            // 6-5. wallet_history 에 (입금) 정산 완료 기록
+            walletHistory = BidInternalDto.WalletHistoryAndUserId.builder()
+                    .userId(sellerId)
+                    .goodsId(goodsId)
+                    .transactionType(TransactionType.INCOME)
+                    .amount(bidAmount)
+                    .description("입금")
+                    .build();
+
+            int incomeHistoryResult = bidMapper.insertWalletHistory(walletHistory);
+            if (incomeHistoryResult < 1)
+                throw new CustomException("입금 거래 내역 기록에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
 
             // 즉시구매면 여기서 끝 (Lock 처리 안 함)
             return;
