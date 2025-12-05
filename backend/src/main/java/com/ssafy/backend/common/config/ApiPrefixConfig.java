@@ -13,6 +13,7 @@ public class ApiPrefixConfig implements WebMvcConfigurer {
     @Override
     public void configurePathMatch(PathMatchConfigurer configurer) {
         configurer.addPathPrefix(API_PREFIX, clazz ->
-                clazz.isAnnotationPresent(RestController.class));
+                clazz.isAnnotationPresent(RestController.class)
+                        && clazz.getPackageName().startsWith("com.ssafy.backend"));
     }
 }
