@@ -40,7 +40,7 @@ public class BidInternalDto {
 
         @Schema(name = "userId", description = "로그인한 사용자Id(pk) or 이전 최고입찰자Id(pk)")
         private Long userId;
-        private int bidAmount;
+        private Integer bidAmount;
 
         @Schema(description = "금액처리상태")
         private TransactionType balanceStatus;
@@ -58,7 +58,7 @@ public class BidInternalDto {
 
         private Long goodsId;
         private TransactionType transactionType;
-        private int amount;
+        private Integer amount;
         private String description;
     }
 }

@@ -15,8 +15,10 @@ public class BidRequestDto {
         @Schema(hidden = true)
         private Long loginUserId; // 클라이언트에게 받는 값 X
 
-        @NotNull
+        @NotNull(message = "굿즈ID 는 필수값입니다.")
         private Long goodsId;
-        private int bidAmount;
+
+        @NotNull(message = "입찰금액은 필수값입니다.")
+        private Integer bidAmount;
     }
 }

@@ -56,7 +56,7 @@ public  class BidServiceImpl implements BidService {
          * */
 
         Long goodsId = bidRegister.getGoodsId();
-        int bidAmount = bidRegister.getBidAmount();
+        Integer bidAmount = bidRegister.getBidAmount();
 
         // 굿즈 + 입찰 정보 조회
         BidInternalDto.GoodsPriceBidInfo info = bidMapper.selectGoodsPriceAndBidInfoByGoodsId(bidRegister.getGoodsId());

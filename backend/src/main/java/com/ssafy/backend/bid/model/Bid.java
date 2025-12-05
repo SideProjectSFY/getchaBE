@@ -12,7 +12,7 @@ public class Bid {
     private Long id;
     private Long goodsId;
     private Long bidderId;
-    private int bidAmount;
+    private Integer bidAmount;
     private boolean isHighest;
     private LocalDateTime createdAt;
 }
