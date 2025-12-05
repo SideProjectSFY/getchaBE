@@ -17,10 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.UUID;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -33,7 +30,6 @@ public class GoodsServiceImpl implements GoodsService {
      * - 토큰 정보 파싱 후 사용자 정보 받아오기
      */
     private final GoodsMapper goodsMapper;
-    private final BidMapper bidMapper;
 
     // 실제 서버 저장 상대경로 prefix
     @Value("${file.upload.prefix}")
@@ -55,14 +51,20 @@ public class GoodsServiceImpl implements GoodsService {
         int duration = goodsRegister.getDuration();
         LocalDateTime auctionEndAt = createdAt.plusDays(duration);
 
+        // 금액 검증
+        Integer startPrice = goodsRegister.getStartPrice();
+        Integer instantBuyPrice = goodsRegister.getInstantBuyPrice();
+        if(instantBuyPrice < startPrice)
+            throw new CustomException("즉시구매가는 시작가 이상이어야 합니다.", HttpStatus.BAD_REQUEST);
+
         Goods goods = Goods.builder()
                 .sellerId(1L) // TODO : Token 파싱 후 넣을 userId
                 .animeId(goodsRegister.getAnimeId())
                 .category(goodsRegister.getCategory())
                 .title(goodsRegister.getTitle())
                 .description(goodsRegister.getDescription())
-                .startPrice(goodsRegister.getStartPrice())
-                .instantBuyPrice(goodsRegister.getInstantBuyPrice())
+                .startPrice(startPrice)
+                .instantBuyPrice(instantBuyPrice)
                 .duration(duration)
                 .auctionEndAt(auctionEndAt)
                 .createdAt(createdAt)
@@ -155,16 +157,52 @@ public class GoodsServiceImpl implements GoodsService {
 
     @Override
     @Transactional
-    public boolean updateGoods(GoodsRequestDto.GoodsModify goodsModify, MultipartFile[] files) {
+    public boolean updateGoods(GoodsRequestDto.GoodsModify goodsModify, List<MultipartFile> imageFiles) {
         // TODO : 본인이 쓴 글인지 확인하는 과정 핋요
         Long loginUserId = 1L;
 
-        // 1. duration 이 update 되었다면 auction_end_at 도 계산해서 update
+        AuctionStatus auctionStatus = goodsModify.getAuctionStatus();
+        Long sellerId = goodsModify.getSellerId();
+        LocalDateTime createdAt = goodsModify.getCreatedAt();
+        int duration = goodsModify.getDuration();
+
+        // 경매 대기 상태 검증
+        if(auctionStatus != AuctionStatus.WAIT)
+            throw new CustomException("경매 상태가 대기일 경우에만 수정이 가능합니다.", HttpStatus.BAD_REQUEST);
+
+        // 본인이 쓴글인지 검증
+        if(!Objects.equals(sellerId, loginUserId))
+            throw new CustomException("수정 권한이 없습니다.", HttpStatus.FORBIDDEN);
+
+        // 경매기간(duration) 수정이 될 경우를 대비하여, auction_end_at 도 작성일시를 기준으로 수정하기
+        LocalDateTime auctionEndAt = createdAt.plusDays(duration);
+        goodsModify.setAuctionEndAt(auctionEndAt);
 
         // 굿즈 데이터 수정
+        int updateGoodsResult = goodsMapper.updateGoods(goodsModify);
+        if(updateGoodsResult < 1)
+            throw new CustomException("굿즈 글 수정에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
 
-        // 이미지 리스트 수정
 
+        /* TODO : 이미지 리스트 수정
+        *  1. 삭제 요청된 이미지 삭제 (DB + 실제 파일 Hard 삭제)
+        *  2. 유지되는 기존 이미지들의 sort_order 업데이트
+        *  3. 신규 이미지 업로드 & INSERT
+        * */
+
+        // 1. 삭제 요청된 이미지 삭제 (DB + 실제 파일 Hard 삭제)
+        List<Long> deleteImageIds = goodsModify.getDeleteImageIds();
+        if (deleteImageIds != null && !deleteImageIds.isEmpty()) {
+            List<GoodsImage> deleteImages = goodsMapper.selectDeleteImageFileByFileId(deleteImageIds);
+
+            for (GoodsImage img : deleteImages) {
+                File file = new File(filePath + File.separator + img.getStoredFilename());
+                if (file.exists()) file.delete();
+            }
+
+            int deleteImageFile = goodsMapper.deleteGoodsImageByFileId(deleteImageIds);
+            if(deleteImageFile < 1) throw new CustomException("이미지 삭제에 실패하였습니다.", HttpStatus.BAD_REQUEST);
+        }
 
         return false;
     }

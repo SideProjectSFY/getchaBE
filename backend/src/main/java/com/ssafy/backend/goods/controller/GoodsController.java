@@ -111,8 +111,8 @@ public class GoodsController {
             description = "굿즈 글의 정보를 수정합니다."
     )
     @PutMapping
-    public ResponseEntity<?> updateGoods(@Valid @RequestBody GoodsRequestDto.GoodsModify goodsModify, MultipartFile[] files) {
-        boolean result = goodsService.updateGoods(goodsModify, files);
+    public ResponseEntity<?> updateGoods(@Valid @RequestBody GoodsRequestDto.GoodsModify goodsModify, List<MultipartFile> imageFiles) {
+        boolean result = goodsService.updateGoods(goodsModify, imageFiles);
         return ResponseEntity.ok(null);
     }
 

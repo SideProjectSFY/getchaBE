@@ -11,6 +11,10 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.validator.constraints.Range;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 public class GoodsRequestDto {
@@ -23,7 +27,7 @@ public class GoodsRequestDto {
         @Schema(description = "애니ID(pk)")
         @NotNull
         private Long animeId;
-        @Schema(description = "카테고리", example = "figure")
+        @Schema(description = "카테고리", example = "FIGURE")
         @NotBlank
         private Category category;
 
@@ -34,8 +38,9 @@ public class GoodsRequestDto {
         @Schema(description = "시작가")
         @NotNull
         @Min(value = 1000, message = "최소 1000원 이상이어야합니다.")
+        @Range(min = 1000, max = 5000000, message = "금액은 1000원 이상 500만원 이하이어야 합니다.")
         private Integer startPrice;
-        @Min(value = 1000, message = "최소 1000원 이상이어야합니다.")
+        @Range(min = 1000, max = 5000000, message = "금액은 1000원 이상 500만원 이하이어야 합니다.")
         private Integer instantBuyPrice;
 
         @Schema(description = "경매기간(일)", example = "3", defaultValue = "3")
@@ -56,29 +61,45 @@ public class GoodsRequestDto {
     @Getter
     @Setter
     public static class GoodsModify {
+        @Schema(name = "deleteImageIds", description = "삭제할 이미지파일ID 리스트")
+        private List<Long> deleteImageIds;
+
         @Schema(hidden = true)
         private Long loginUserId;
+        @Schema(hidden = true)
+        private LocalDateTime auctionEndAt;
 
-        @NotBlank(message = "굿즈ID 는 필수값입니다.")
+        @NotNull(message = "판매자ID는 필수값입니다.")
+        private Long sellerId;
+        @NotNull(message = "굿즈ID 는 필수값입니다.")
         private Long goodsId;
-
         @NotBlank
         private String title;
-        @NotBlank
+        @NotNull
         private Long animeId;
         @NotBlank
-        private String category;
-        @NotBlank
         private String description;
+
         @NotBlank
-        @Min(value = 1000, message = "최소 1000원 이상이어야합니다.")
+        @Range(min = 1000, max = 5000000, message = "금액은 1000원 이상 500만원 이하이어야 합니다.")
         private Integer startPrice;
-        @Min(value = 1000, message = "최소 1000원 이상이어야합니다.")
+        @Range(min = 1000, max = 5000000, message = "금액은 1000원 이상 500만원 이하이어야 합니다.")
         private Integer instantBuyPrice;
+
+        @Schema(description = "경매상태", example = "WAIT")
+        @NotBlank(message = "경매상태가 유효하지 않습니다.")
+        private AuctionStatus auctionStatus;
+        @Schema(description = "카테고리", example = "FIGURE")
+        @NotBlank(message = "카테고리가 유효하지 않습니다.")
+        private Category category;
+
         @NotBlank
         @Max(value = 14, message = "경매기간은 최대 14일까지 입니다.")
         private Integer duration;
-        private String auctionStatus;
+        @NotNull(message = "작성일시는 필수값입니다.")
+        private LocalDateTime createdAt;
+
+
     }
 
 }

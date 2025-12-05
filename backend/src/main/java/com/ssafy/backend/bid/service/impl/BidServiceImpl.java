@@ -2,7 +2,6 @@ package com.ssafy.backend.bid.service.impl;
 
 import com.ssafy.backend.bid.model.*;
 import com.ssafy.backend.bid.service.BidService;
-import com.ssafy.backend.comment.model.CommentMapper;
 import com.ssafy.backend.common.enums.AuctionStatus;
 import com.ssafy.backend.common.enums.TransactionType;
 import com.ssafy.backend.common.exception.CustomException;
@@ -23,8 +22,13 @@ import java.util.Objects;
 @Service
 public  class BidServiceImpl implements BidService {
 
+    /**
+     * TODO
+     * 1. 필수 !!!
+     * - 토큰 정보 파싱 후 사용자 정보 받아오기
+     */
+
     private final BidMapper bidMapper;
-    private final CommentMapper commentMapper;
 
     private static final int LIMIT_AMOUNT = 5_000_000;
     
@@ -75,7 +79,7 @@ public  class BidServiceImpl implements BidService {
 
         // 0-1. 판매자 입찰 제한
         if (Objects.equals(sellerId, loginUserId)) {
-            throw new CustomException("판매자는 자신의 굿즈에 입찰할 수 없습니다.", HttpStatus.BAD_REQUEST);
+            throw new CustomException("판매자는 자신의 굿즈에 입찰할 수 없습니다.", HttpStatus.FORBIDDEN);
         }
 
         // 0-2. 현재 최고 입찰자는 재입찰 불가
@@ -201,7 +205,7 @@ public  class BidServiceImpl implements BidService {
         BidInternalDto.GoodsPriceBidInfo info = bidMapper.selectGoodsPriceAndBidInfoByGoodsId(goodsId);
         if(info == null) throw new NoSuchElementException("존재하지 않는 굿즈 또는 이미 종료된 경매입니다.");
 
-        if(!Objects.equals(loginUserId, info.getSellerId())) throw new CustomException("거래중지는 판매자만 가능합니다.", HttpStatus.BAD_REQUEST);
+        if(!Objects.equals(loginUserId, info.getSellerId())) throw new CustomException("거래중지 권한이 없습니다.", HttpStatus.FORBIDDEN);
 
         // 기존 최고 입찰자 예치금 unlock + 지갑 내역 BIDUNLOCK 기록
         unlockBidAmount(info.getBidderId(), goodsId, info.getCurrentBidAmount());

@@ -190,6 +190,7 @@
             start_price = #{startPrice},
             instant_buy_price = #{instantBuyPrice},
             duration = #{duration},
+            auction_end_at = #{auctionEndAt}
             updated_at = NOW()
         WHERE auction_status = 'WAIT'
             AND id = #{goodsId}
@@ -233,6 +234,24 @@
             #{sortOrder}
         )
     </insert>
+
+    <!-- 삭제할 이미지파일ID의 정보 조회-->
+    <select id="selectDeleteImageFileByFileId" resultType="GoodsImage" parameterType="java.util.List">
+        SELECT id, stored_filename
+        FROM goods_image
+        WHERE id IN
+        <foreach collection="deleteImageIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>;
+    </select>
+
+    <delete id="deleteGoodsImageByFileId" parameterType="java.util.List">
+        DELETE FROM goods_image
+        WHERE id IN
+        <foreach collection="deleteImageIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>;
+    </delete>
 
     <!-- 굿즈 다중 이미지(=파일) 수정 -->
     <update id="updateFiles" parameterType="java.util.List">

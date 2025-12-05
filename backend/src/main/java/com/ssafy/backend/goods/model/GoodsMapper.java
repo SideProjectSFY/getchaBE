@@ -69,6 +69,20 @@ public interface GoodsMapper {
     List<GoodsResponseDto.GoodsDetailImage> selectImagesByGoodsId(Long goodsId);
 
     /**
+     * 삭제할 이미지파일ID 리스트 의 정보 조회
+     * @param deleteImageIds 삭제할 이미지파일ID 리스트
+     * @return 이미지 리스트 결과 반환
+     */
+    List<GoodsImage> selectDeleteImageFileByFileId(List<Long> deleteImageIds);
+
+    /**
+     * 이미지 삭제
+     * @param deleteImageIds 삭제할 이미지파일ID 리스트
+     * @return 삭제 결과 반환 
+     */
+    int deleteGoodsImageByFileId(List<Long> deleteImageIds);
+
+    /**
      * 굿즈 글 정보 수정
      * @param goodsModify 수정할 굿즈 정보
      * @return 굿즈 글 수정 결과 반환

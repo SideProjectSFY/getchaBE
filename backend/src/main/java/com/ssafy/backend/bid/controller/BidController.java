@@ -41,7 +41,7 @@ public class BidController {
             description = "판매자가 거래 중지 버튼을 클릭했을 경우 호출합니다")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "거래 중지가 성공적으로 적용되었습니다."),
-            @ApiResponse(responseCode = "400", description = "거래중지는 판매자만 가능합니다."),
+            @ApiResponse(responseCode = "403", description = "거래중지 권한이 없습니다."),
             @ApiResponse(responseCode = "404", description = "존재하지 않는 굿즈 또는 이미 종료된 경매입니다."),
             @ApiResponse(responseCode = "503", description = "거래 중지를 실패하였습니다.")
     })
