@@ -35,6 +35,8 @@
                 ON b.goods_id = g.id
                     AND b.is_highest IS TRUE
         WHERE g.id = #{goodsId}
+          AND g.auction_status IN ('WAIT', 'PROCEEDING')
+          AND g.deleted_at IS NULL
         FOR UPDATE;
     </select>
 
@@ -119,5 +121,6 @@
         FROM goods
         WHERE auction_end_at <![CDATA[<=]]> NOW()
           AND auction_status IN ('WAIT', 'PROCEEDING')
+          AND deleted_at IS NULL
     </select>
 </mapper>

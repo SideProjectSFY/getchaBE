@@ -36,11 +36,8 @@ public  class BidServiceImpl implements BidService {
     public void postBidForGoods(BidRequestDto.BidRegister bidRegister) {
         
         // TODO : 토큰 정보에서 로그인 ID 뽑아오기
-        Long loginUserId = 3L;
+        Long loginUserId = 10L;
 
-        // 가상화페DTO, 거래내역DTO 선언
-        BidInternalDto.CoinWalletBalance coinWalletBalance;
-        BidInternalDto.WalletHistoryAndUserId walletHistory;
         /*
         * <조건>
         * 1. 굿즈를 등록한 판매자는 입찰할 수 없음
@@ -63,7 +60,7 @@ public  class BidServiceImpl implements BidService {
 
         // 굿즈 + 입찰 정보 조회
         BidInternalDto.GoodsPriceBidInfo info = bidMapper.selectGoodsPriceAndBidInfoByGoodsId(bidRegister.getGoodsId());
-        if(info == null) throw new NoSuchElementException("존재하지 않는 굿즈 글입니다");
+        if(info == null) throw new NoSuchElementException("존재하지 않는 굿즈 또는 이미 종료된 경매입니다.");
 
         Long sellerId = info.getSellerId();
         Long bidId = info.getBidId();                           // null 이면 첫 입찰
@@ -103,10 +100,6 @@ public  class BidServiceImpl implements BidService {
                 // 1-2. 첫 입찰 성공 -> 상태를 '경매 진행'으로 변경(WAIT -> PROCEEDING)
                 updateAuctionStatusOrThrow(goodsId, AuctionStatus.PROCEEDING);
 
-//                int updateStatusResult = goodsMapper.updateAuctionStatus(bidRegister.getGoodsId(), AuctionStatus.PROCEEDING);
-//                if(updateStatusResult < 1)
-//                    throw new CustomException("경매 상태 업데이트에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
-
                 //  이후 흐름은 5번(입찰등록)부터 공통 처리
             }
             // 첫입찰 + 즉시 구매가 이상인 경우 위 로직 안돌리고 바로 5번(입찰등록)부터 공통처리
@@ -130,39 +123,10 @@ public  class BidServiceImpl implements BidService {
             * */
             unlockBidAmount(beforeBidderId, goodsId, currentBidAmount);
             
-//            coinWalletBalance = BidInternalDto.CoinWalletBalance.builder()
-//                    .bidAmount(currentBidAmount)
-//                    .userId(beforeBidderId)
-//                    .balanceStatus(TransactionType.BIDUNLOCK)
-//                    .build();
-//
-//            int unlockResult = bidMapper.updateBalanceStatus(coinWalletBalance);
-//            if(unlockResult < 1) throw new CustomException("이전 입찰자의 예치금 환원을 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
-
-            /*
-            * 4. 기존 최고 입찰자의 지갑 내역 BIDUNLOCK 기록
-            * */
-//            walletHistory = BidInternalDto.WalletHistoryAndUserId.builder()
-//                    .userId(beforeBidderId)
-//                    .goodsId(goodsId)
-//                    .transactionType(TransactionType.BIDUNLOCK)
-//                    .amount(currentBidAmount)
-//                    .description("환불")
-//                    .build();
-//
-//            int insertHistoryResult = bidMapper.insertWalletHistory(walletHistory);
-//            if(insertHistoryResult < 1) throw new CustomException("이전 입찰자의 거래 내역 기록에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
         }
 
         // 0-3. 새 입찰자의 코인 잔액 검증 (LOCK 또는 PAY 가능 여부 확인)
         validateWalletBalance(loginUserId, bidAmount);
-
-//        Integer walletBalance = bidMapper.selectCoinWalletBalanceForUpdate(loginUserId);
-//        if (walletBalance == null)
-//            throw new CustomException("가상지갑 정보가 존재하지 않습니다.", HttpStatus.BAD_REQUEST);
-//
-//        if (walletBalance < bidAmount)
-//            throw new CustomException("입찰 금액만큼의 잔액이 부족합니다.", HttpStatus.BAD_REQUEST);
 
 
         /*
@@ -190,10 +154,6 @@ public  class BidServiceImpl implements BidService {
             // 5-1. 굿즈 상태를 '낙찰' 로 변경
             updateAuctionStatusOrThrow(goodsId, AuctionStatus.COMPLETED);
 
-//            int updateStatusResult = goodsMapper.updateAuctionStatus(goodsId, AuctionStatus.COMPLETED);
-//            if(updateStatusResult < 1)
-//                throw new CustomException("경매 상태 업데이트에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
-
             // 5-2. 새 입찰자의 금액을 Lock 이 아닌 실제 출금 처리 + 지갑에 "출금" 기록
             updateBalanceAndHistory(
                     loginUserId,
@@ -204,28 +164,6 @@ public  class BidServiceImpl implements BidService {
                     "낙찰"
             );
 
-//            coinWalletBalance = BidInternalDto.CoinWalletBalance.builder()
-//                    .bidAmount(bidAmount)
-//                    .userId(loginUserId)
-//                    .balanceStatus(TransactionType.EXPENSE) // 정산
-//                    .build();
-//
-//            int payResult = bidMapper.updateBalanceStatus(coinWalletBalance);
-//            if (payResult < 1) throw new CustomException("낙찰 금액 정산에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
-//
-//            // 6-3. wallet_history 에 (출금) 정산 완료 기록
-//            walletHistory = BidInternalDto.WalletHistoryAndUserId.builder()
-//                    .userId(loginUserId)
-//                    .goodsId(goodsId)
-//                    .transactionType(TransactionType.EXPENSE)
-//                    .amount(bidAmount)
-//                    .description("낙찰")
-//                    .build();
-//
-//            int payHistoryResult = bidMapper.insertWalletHistory(walletHistory);
-//            if (payHistoryResult < 1)
-//                throw new CustomException("낙찰 거래 내역 기록에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
-
             // 5-3. 판매자에게 입금
             updateBalanceAndHistory(
                     sellerId,
@@ -235,28 +173,6 @@ public  class BidServiceImpl implements BidService {
                     TransactionType.INCOME,
                     "입금"
             );
-
-//            coinWalletBalance = BidInternalDto.CoinWalletBalance.builder()
-//                    .bidAmount(bidAmount)
-//                    .userId(sellerId)
-//                    .balanceStatus(TransactionType.INCOME) // 입금
-//                    .build();
-//
-//            int incomeResult = bidMapper.updateBalanceStatus(coinWalletBalance);
-//            if (incomeResult < 1) throw new CustomException("입금 금액 정산에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
-//
-//            // 6-5. wallet_history 에 (입금) 정산 완료 기록
-//            walletHistory = BidInternalDto.WalletHistoryAndUserId.builder()
-//                    .userId(sellerId)
-//                    .goodsId(goodsId)
-//                    .transactionType(TransactionType.INCOME)
-//                    .amount(bidAmount)
-//                    .description("입금")
-//                    .build();
-//
-//            int incomeHistoryResult = bidMapper.insertWalletHistory(walletHistory);
-//            if (incomeHistoryResult < 1)
-//                throw new CustomException("입금 거래 내역 기록에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
 
             // 즉시구매면 여기서 끝 (Lock 처리 안 함)
             return;
@@ -275,26 +191,6 @@ public  class BidServiceImpl implements BidService {
                 "입찰"
         );
 
-//        coinWalletBalance = BidInternalDto.CoinWalletBalance.builder()
-//                .bidAmount(bidAmount)
-//                .userId(loginUserId)
-//                .balanceStatus(TransactionType.BIDLOCK)
-//                .build();
-//
-//
-//        int lockResult = bidMapper.updateBalanceStatus(coinWalletBalance);
-//        if(lockResult < 1) throw new CustomException("새로운 입찰자의 예치금 잠금을 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
-//
-//        walletHistory = BidInternalDto.WalletHistoryAndUserId.builder()
-//                .userId(loginUserId)
-//                .goodsId(goodsId)
-//                .transactionType(TransactionType.BIDLOCK)
-//                .amount(bidAmount)
-//                .description("입찰")
-//                .build();
-//
-//        int lockHistoryResult = bidMapper.insertWalletHistory(walletHistory);
-//        if(lockHistoryResult < 1) throw new CustomException("새로운 입찰자의 입찰 거래 내역 기록에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
 
     }
 
@@ -320,9 +216,11 @@ public  class BidServiceImpl implements BidService {
     /**
      * 경매 종료 스케줄러
      */
-    @Scheduled(fixedDelay = 10000L)
+    @Scheduled(fixedDelay = 100000L)
     @Transactional
     public void proceessEndedAuctions() {
+        log.info("-------------------------------------------------1분 경매 종료 체크 스케줄러 시작-------------------------------------------------");
+
         List<Goods> endedAuctions = bidMapper.selectEndedAuctions();
 
         if(endedAuctions == null || endedAuctions.isEmpty()) return;
@@ -332,15 +230,12 @@ public  class BidServiceImpl implements BidService {
             Long sellerId = goods.getSellerId();
 
             // 1. 최고 입찰 조회
-            BidInternalDto.GoodsPriceBidInfo highestBid = bidMapper.selectGoodsPriceAndBidInfoByGoodsId(goodsId);
+            BidInternalDto.GoodsPriceBidInfo highestBid =
+                    bidMapper.selectGoodsPriceAndBidInfoByGoodsId(goodsId);
 
             if(highestBid.getBidId() == null) {
                 // 입찰 없으면 패찰 처리
                 updateAuctionStatusOrThrow(goodsId, AuctionStatus.STOPPED);
-
-//                int updateStatusResult = goodsMapper.updateAuctionStatus(goodsId, AuctionStatus.STOPPED);
-//                if(updateStatusResult < 1)
-//                    throw new CustomException("경매 상태 업데이트에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
 
                 continue;
             }
@@ -348,77 +243,33 @@ public  class BidServiceImpl implements BidService {
             Long highestBidderId = highestBid.getBidderId();
             Integer highestBidAmount = highestBid.getCurrentBidAmount();
 
-            // 2. 최고 입찰자 Lock → Pay
+            // 2. 최고 입찰자 Lock → 실제 결제  + 지갑에 '낙찰' 기록
             updateBalanceAndHistory(
                     highestBidderId,
                     goodsId,
                     highestBidAmount,
-                    TransactionType.SETTLE,
-                    TransactionType.EXPENSE,
-                    "낙찰"
+                    TransactionType.SETTLE,    // (예치금 → 실제 지불)
+                    TransactionType.EXPENSE,   // 출금
+                    "경매 종료 자동 낙찰"
                     );
 
-//            BidInternalDto.CoinWalletBalance coinWalletBalance = BidInternalDto.CoinWalletBalance.builder()
-//                    .bidAmount(highestBidAmount)
-//                    .userId(highestBidderId)
-//                    .balanceStatus(TransactionType.SETTLE) // 예치금Lock 된 금액을 실제 지불
-//                    .build();
-//
-//            int settleResult = bidMapper.updateBalanceStatus(coinWalletBalance);
-//            if (settleResult < 1) throw new CustomException("낙찰 금액 정산에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
-//
-//            // 3. wallet_history 에 (출금) 정산 완료 기록
-//            BidInternalDto.WalletHistoryAndUserId walletHistory = BidInternalDto.WalletHistoryAndUserId.builder()
-//                    .userId(highestBidderId)
-//                    .goodsId(goodsId)
-//                    .transactionType(TransactionType.EXPENSE)
-//                    .amount(highestBidAmount)
-//                    .description("낙찰")
-//                    .build();
-//
-//            int settleHistoryResult = bidMapper.insertWalletHistory(walletHistory);
-//            if (settleHistoryResult < 1)
-//                throw new CustomException("낙찰 거래 내역 기록에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
-
-            // 4. 판매자에게 입금
+            // 3. 판매자에게 입금 + 지갑에 '입금' 기록
             updateBalanceAndHistory(
                     sellerId,
                     goodsId,
                     highestBidAmount,
                     TransactionType.INCOME,
                     TransactionType.INCOME,
-                    "입금"
+                    "경매 종료 자동 입금"
             );
 
-//            coinWalletBalance = BidInternalDto.CoinWalletBalance.builder()
-//                    .bidAmount(highestBidAmount)
-//                    .userId(sellerId)
-//                    .balanceStatus(TransactionType.INCOME) // 입금
-//                    .build();
-//
-//            int incomeResult = bidMapper.updateBalanceStatus(coinWalletBalance);
-//            if (incomeResult < 1) throw new CustomException("입금 금액 정산에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
-//
-//            // 5. wallet_history 에 (입금) 정산 완료 기록
-//            walletHistory = BidInternalDto.WalletHistoryAndUserId.builder()
-//                    .userId(sellerId)
-//                    .goodsId(goodsId)
-//                    .transactionType(TransactionType.INCOME)
-//                    .amount(highestBidAmount)
-//                    .description("입금")
-//                    .build();
-//
-//            int incomeHistoryResult = bidMapper.insertWalletHistory(walletHistory);
-//            if (incomeHistoryResult < 1)
-//                throw new CustomException("입금 거래 내역 기록에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
-            
-            // 6. 경매상태 '낙찰' 로 변경
+
+            // 5. 경매상태 '낙찰' 로 변경
             updateAuctionStatusOrThrow(goodsId, AuctionStatus.COMPLETED);
 
-//            int updateStatusResult = goodsMapper.updateAuctionStatus(goodsId, AuctionStatus.COMPLETED);
-//            if(updateStatusResult < 1)
-//                throw new CustomException("경매 상태 업데이트에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
         }
+
+        log.info("-------------------------------------------------1분 경매 종료 체크 스케줄러 종료-------------------------------------------------");
     }
 
     /**
