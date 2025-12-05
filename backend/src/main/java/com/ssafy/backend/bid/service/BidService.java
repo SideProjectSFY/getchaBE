@@ -1,9 +1,6 @@
 package com.ssafy.backend.bid.service;
 
 import com.ssafy.backend.bid.model.BidRequestDto;
-import com.ssafy.backend.bid.model.BidResponseDto;
-
-import java.util.List;
 
 public interface BidService {
 
@@ -14,9 +11,8 @@ public interface BidService {
     void postBidForGoods(BidRequestDto.BidRegister bidRegister);
 
     /**
-     * 입찰에 참여한 참여자리스트 조회
+     * 굿즈 경매 상태 업데이트
      * @param goodsId 굿즈ID(pk)
-     * @return 참여자리스트 반환
      */
-    List<BidResponseDto.BidParticipant> getAllParticipant(Long goodsId);
+    void updateStopAuctionStatus(Long goodsId);
 }

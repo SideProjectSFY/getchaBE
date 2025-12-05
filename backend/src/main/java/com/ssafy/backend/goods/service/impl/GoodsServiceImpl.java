@@ -1,5 +1,6 @@
 package com.ssafy.backend.goods.service.impl;
 
+import com.ssafy.backend.bid.model.BidMapper;
 import com.ssafy.backend.common.PageResponse;
 import com.ssafy.backend.common.enums.AuctionStatus;
 import com.ssafy.backend.common.exception.CustomException;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -31,6 +33,7 @@ public class GoodsServiceImpl implements GoodsService {
      * - 토큰 정보 파싱 후 사용자 정보 받아오기
      */
     private final GoodsMapper goodsMapper;
+    private final BidMapper bidMapper;
 
     // 실제 서버 저장 상대경로 prefix
     @Value("${file.upload.prefix}")
@@ -124,17 +127,30 @@ public class GoodsServiceImpl implements GoodsService {
         // TODO : 본인이 쓴 글인지 확인
         Long loginUserId = 1L;
 
-        // 굿즈 데이터
+        // 굿즈 데이터 조회
         GoodsResponseDto.GoodsDetail goodsDetail = goodsMapper.selectGoodsById(goodsId, loginUserId);
+
+        if (goodsDetail == null) {
+            throw new NoSuchElementException("존재하지 않는 굿즈입니다.");
+        }
 
         // 이미지 리스트 조회
         List<GoodsResponseDto.GoodsDetailImage> imageList = goodsMapper.selectImagesByGoodsId(goodsId);
+        if(imageList == null || imageList.isEmpty()) imageList =  Collections.emptyList();
 
         // 입찰 관련 데이터 (+경매 참여자)
+        List<GoodsResponseDto.BidParticipant> participants = goodsMapper.selectBidParticipantByGoodsId(goodsId);
+
+        if (participants == null || participants.isEmpty()) {
+            participants =  Collections.emptyList();
+        }
 
         // 모든 데이터 합쳐서 GoodsDetailAll 에 넣어서 반환
-
-        return null;
+        return GoodsResponseDto.GoodsDetailAll.builder()
+                .goodDetail(goodsDetail)
+                .imageList(imageList)
+                .participants(participants)
+                .build();
     }
 
     @Override
@@ -161,6 +177,8 @@ public class GoodsServiceImpl implements GoodsService {
 
         // 상태 체크
         AuctionStatus auctionStatus = goodsMapper.selectAuctionStatusByGoodsId(goodsId);
+        if(auctionStatus == null) throw new NoSuchElementException("존재하지 않는 굿즈입니다.");
+
         // 진행중이 아닐 때만 삭제 (경매 대기 or 완료 일 때만 삭제가능)
         if(auctionStatus != AuctionStatus.PROCEEDING) {
             int deleteResult = goodsMapper.deleteGoods(goodsId, loginUserId);
@@ -171,20 +189,6 @@ public class GoodsServiceImpl implements GoodsService {
         }
     }
 
-    @Override
-    @Transactional
-    public void updateAuctionStatus(Long goodsId) {
-        /**
-         *  TODO
-         *  1. 본인이 쓴 글인지 확인
-         *  2. 거래중지 시 Lock 상태의 참여자에게 예치금 환원
-         */
-        // - 거래중지 알림 발송
-
-        // 경매 상태 -> 패찰로 업데이트
-        int result = goodsMapper.updateAuctionStatus(goodsId, AuctionStatus.STOPPED);
-        if(result < 1) throw new CustomException("거래 중지를 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
-    }
 
     /**
      * 사용자가 업로드한 파일명을 다른 사용자가 올린 파일명과 중복되지 않게 유니크한

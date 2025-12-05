@@ -139,18 +139,36 @@
                     SELECT 1 FROM wishlist
                     WHERE goods_id = g.id
                     AND user_id = #{loginUserId})
-            ) AS isWish,
-            (g.seller_id = #{loginUserId}) AS isSeller
+            ) AS checkWish,
+            (g.seller_id = #{loginUserId}) AS checkSeller
         FROM goods g
             INNER JOIN user u
                 ON u.id = g.seller_id
             LEFT JOIN tmdb_anime ta
                 ON ta.id = g.anime_id and ta.id = u.liked_anime_id1
-            INNER JOIN bid b
-                ON b.goods_id = g.id
+            LEFT JOIN bid b
+            ON b.goods_id = g.id AND b.is_highest IS TRUE
         WHERE g.id = #{goodsId}
-          AND b.is_highest = TRUE
           AND g.deleted_at IS NULL
+    </select>
+
+    <!-- 경매에 입찰한 참여자 리스트 조회 -->
+    <select id="selectBidParticipantByGoodsId" parameterType="Long" resultType="com.ssafy.backend.goods.model.GoodsResponseDto$BidParticipant">
+        SELECT
+        DENSE_RANK() OVER (ORDER BY bid_amount DESC) AS bidRank,
+        b.id AS bidId,
+        bidder_id,
+        u.nickname AS bidderNickName,
+        ta.poster_url AS bidderProfileFilePath,
+        bid_amount,
+        is_highest
+        FROM bid b
+        LEFT JOIN user u
+        ON b.bidder_id = u.id
+        LEFT JOIN tmdb_anime ta
+        ON ta.id = u.liked_anime_id1
+        WHERE goods_id = #{goodsId}
+        ORDER BY bid_amount DESC;
     </select>
 
     <!-- 특정 굿즈 글의 다중 이미지 리스트 조회 -->
@@ -195,14 +213,6 @@
         WHERE id = #{goodsId}
     </select>
 
-    <!-- 굿즈 경매 상태 업데이트 -->
-    <update id="updateAuctionStatus">
-        UPDATE goods
-        SET
-            auction_status = #{auctionStatus}
-        WHERE id = #{goodsId}
-            AND deleted_at IS NULL;
-    </update>
 
     <!-- 굿즈 다중 이미지(=파일) 업로드 -->
     <insert id="insertFiles" parameterType="GoodsImage" useGeneratedKeys="true" keyProperty="id">

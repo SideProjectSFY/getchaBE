@@ -34,13 +34,13 @@ public class GoodsRequestDto {
         @Schema(description = "시작가")
         @NotNull
         @Min(value = 1000, message = "최소 1000원 이상이어야합니다.")
-        private int startPrice;
+        private Integer startPrice;
         @Min(value = 1000, message = "최소 1000원 이상이어야합니다.")
-        private int instantBuyPrice;
+        private Integer instantBuyPrice;
 
         @Schema(description = "경매기간(일)", example = "3", defaultValue = "3")
         @Max(value = 14, message = "경매기간은 최대 14일까지 입니다.")
-        private int duration;
+        private Integer duration;
     }
 
     @Schema(description = "굿즈 목록 조회 DTO")
@@ -72,12 +72,12 @@ public class GoodsRequestDto {
         private String description;
         @NotBlank
         @Min(value = 1000, message = "최소 1000원 이상이어야합니다.")
-        private int startPrice;
+        private Integer startPrice;
         @Min(value = 1000, message = "최소 1000원 이상이어야합니다.")
-        private int instantBuyPrice;
+        private Integer instantBuyPrice;
         @NotBlank
         @Max(value = 14, message = "경매기간은 최대 14일까지 입니다.")
-        private int duration;
+        private Integer duration;
         private String auctionStatus;
     }
 

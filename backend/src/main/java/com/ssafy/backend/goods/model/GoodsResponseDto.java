@@ -12,8 +12,6 @@ import java.util.List;
 @Setter
 public class GoodsResponseDto {
 
-
-
     /**
      * GoodsCard : 굿즈 목록 조회 시 하나의 Goods카드 데이터
      * */
@@ -30,7 +28,7 @@ public class GoodsResponseDto {
         private String mainFilePath;            // 굿즈대표이미지
         private String title;                   // 굿즈 글의 제목
         private String animeTitle;              // 애니메이션 제목
-        private int currentBidAmount;           // 현재 입찰가
+        private Integer currentBidAmount;           // 현재 입찰가
         private AuctionStatus auctionStatus;
         private LocalDateTime auctionEndAt;
         private LocalDateTime createdAt;
@@ -42,12 +40,9 @@ public class GoodsResponseDto {
     @Getter
     @Builder
     public static class GoodsDetailAll {
-        GoodsDetail goodDetail;
-        List<GoodsDetailImage> imageList;
-
-        // TODO : 추후 추가할 데이터
-//        private AuctionVO auction;
-//        private List<AuctionParticipantVO> participants;
+        private GoodsDetail goodDetail;
+        private List<GoodsDetailImage> imageList;
+        private List<BidParticipant> participants;
     }
 
     /**
@@ -55,6 +50,8 @@ public class GoodsResponseDto {
      * */
     @Getter
     @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class GoodsDetail {
         private Long goodsId;
         private Long animeId;
@@ -69,19 +66,19 @@ public class GoodsResponseDto {
         private String title;
         private String description;
 
-        private int startPrice;
-        private int currentBidAmount;
-        private int instantBuyPrice;
+        private Integer startPrice;
+        private Integer currentBidAmount;
+        private Integer instantBuyPrice;
         private AuctionStatus auctionStatus;    // enum
 
         private LocalDateTime createdAt;
         private LocalDateTime auctionEndAt;
         private int wishCount;
 
-        @Schema(name = "isWish", description = "로그인한 사용자가 찜하기를 눌렀는지 체크하는 컬럼")
-        private boolean isWish;
-        @Schema(name = "isSeller", description = "로그인한 사용자가 작성한 글인지 체크하는 컬럼")
-        private boolean isSeller;
+        @Schema(name = "checkWish", description = "로그인한 사용자가 찜하기를 눌렀는지 체크하는 컬럼")
+        private boolean checkWish;
+        @Schema(name = "checkSeller", description = "로그인한 사용자가 작성한 글인지 체크하는 컬럼")
+        private boolean checkSeller;
     }
 
     /**
@@ -89,10 +86,27 @@ public class GoodsResponseDto {
      */
     @Getter
     @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class GoodsDetailImage {
         private Long id;
-        private Long goods_id;
-        private String file_path;
-        private int sort_order;
+        private Long goodsId;
+        private String filePath;
+        private Integer sortOrder;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BidParticipant {
+
+        private Integer bidRank;
+        private Long bidId;
+        private Long bidderId;
+        private String bidderNickName;
+        private String bidderProfileFilePath;
+        private Integer bidAmount;
+        private boolean isHighest;
     }
 }

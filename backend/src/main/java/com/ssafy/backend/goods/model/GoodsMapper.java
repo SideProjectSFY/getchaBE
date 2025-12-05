@@ -53,6 +53,14 @@ public interface GoodsMapper {
      */
     GoodsResponseDto.GoodsDetail selectGoodsById(Long goodsId, Long loginUserId);
 
+
+    /**
+     * 경매에 입찰한 참여자 리스트 조회
+     * @param goodsId 굿즈Id(pk)
+     * @return 경매 입찰자 리스트 결과 반환
+     */
+    List<GoodsResponseDto.BidParticipant> selectBidParticipantByGoodsId(Long goodsId);
+
     /**
      * 특정 굿즈 글의 다중 이미지 리스트 조회
      * @param goodsId 굿즈ID(pk)
@@ -81,12 +89,5 @@ public interface GoodsMapper {
      * @return 경매 상태
      */
     AuctionStatus selectAuctionStatusByGoodsId(Long goodsId);
-
-    /**
-     * 굿즈 경매 상태 업데이트
-     * @param goodsId 굿즈ID(pk)
-     * @return 굿즈 경매 상태 업데이트 결과반환
-     * */
-    int updateAuctionStatus(Long goodsId, AuctionStatus auctionStatus);
 
 }

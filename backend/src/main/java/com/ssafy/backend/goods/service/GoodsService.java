@@ -45,10 +45,4 @@ public interface GoodsService {
      */
     void deleteGoods(Long goodsId);
 
-    /**
-     * 굿즈 경매 상태 업데이트
-     * @param goodsId 굿즈ID(pk)
-     */
-    void updateAuctionStatus(Long goodsId);
-
 }

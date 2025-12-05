@@ -64,7 +64,7 @@ public class CommentServiceImpl implements CommentService {
     public List<CommentResponseDTO> getAllComment(Long goodsId) {
 
         List<CommentResponseDTO> commentList = commentMapper.selectAllCommentByGoodsId(goodsId);
-        if(commentList.isEmpty()) throw new NoSuchElementException("등록된 댓글이 없습니다.");
+        if(commentList == null || commentList.isEmpty()) return Collections.emptyList();
 
         Map<Long, CommentResponseDTO> map = new HashMap<>();
         List<CommentResponseDTO> rootList = new ArrayList<>();

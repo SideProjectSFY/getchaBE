@@ -13,15 +13,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -98,11 +95,15 @@ public class GoodsController {
             summary = "굿즈 글 상세 조회",
             description = "굿즈 글을 상세 조회합니다."
     )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "굿즈가 성공적으로 조회되었습니다."),
+            @ApiResponse(responseCode = "403", description = "존재하지 않는 굿즈입니다."),
+    })
     @Parameter(name = "goodsId", description = "굿즈ID(pk)", required = true)
     @GetMapping
-    public ResponseEntity<?> getGoodsById(@NotBlank @RequestParam Long goodsId) {
-        GoodsResponseDto.GoodsDetailAll result = goodsService.getGoodsById(goodsId);
-        return ResponseEntity.ok(null);
+    public ResponseEntity<GoodsResponseDto.GoodsDetailAll> getGoodsById(@NotNull @RequestParam Long goodsId) {
+        GoodsResponseDto.GoodsDetailAll goodsDetailAll = goodsService.getGoodsById(goodsId);
+        return ResponseEntity.ok(goodsDetailAll);
     }
 
     @Operation(
@@ -131,19 +132,4 @@ public class GoodsController {
         return new ResponseEntity<>("굿즈 글이 성공적으로 삭제되었습니다.", HttpStatus.OK);
     }
 
-    @Operation(
-            summary = "굿즈 글 거래 중지",
-            description = "판매자가 거래 중지 버튼을 클릭했을 경우 호출합니다")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "거래 중지가 성공적으로 적용되었습니다."),
-            // TODO : 예치금 환원 관련 예외처리 필요
-            @ApiResponse(responseCode = "400", description = ""),
-            @ApiResponse(responseCode = "503", description = "거래 중지를 실패하였습니다.")
-    })
-    @Parameter(name = "goodsId", description = "굿즈ID(pk)", required = true)
-    @PutMapping("/stop-auction")
-    public ResponseEntity<String> updateAuctionStatus(@NotNull @RequestParam Long goodsId) {
-        goodsService.updateAuctionStatus(goodsId);
-        return new ResponseEntity<>("거래 중지가 성공적으로 적용되었습니다.", HttpStatus.OK);
-    }
 }

@@ -7,7 +7,6 @@ import com.ssafy.backend.common.enums.AuctionStatus;
 import com.ssafy.backend.common.enums.TransactionType;
 import com.ssafy.backend.common.exception.CustomException;
 import com.ssafy.backend.goods.model.Goods;
-import com.ssafy.backend.goods.model.GoodsMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,7 +14,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -26,7 +24,6 @@ import java.util.Objects;
 public  class BidServiceImpl implements BidService {
 
     private final BidMapper bidMapper;
-    private final GoodsMapper goodsMapper;
     private final CommentMapper commentMapper;
 
     private static final int LIMIT_AMOUNT = 5_000_000;
@@ -194,24 +191,27 @@ public  class BidServiceImpl implements BidService {
 
     }
 
-
-
-
     @Override
-    public List<BidResponseDto.BidParticipant> getAllParticipant(Long goodsId) {
+    @Transactional
+    public void updateStopAuctionStatus(Long goodsId) {
+        // TODO : 로그인 정보 받아와야함
+        Long loginUserId = 3L;
 
-        if (commentMapper.checkGoodsId(goodsId) == 0) {
-            throw new NoSuchElementException("존재하지 않는 굿즈입니다.");
-        }
+        // 굿즈 + 입찰 정보 조회
+        BidInternalDto.GoodsPriceBidInfo info = bidMapper.selectGoodsPriceAndBidInfoByGoodsId(goodsId);
+        if(info == null) throw new NoSuchElementException("존재하지 않는 굿즈 또는 이미 종료된 경매입니다.");
 
-        List<BidResponseDto.BidParticipant> participants = bidMapper.selectBidParticipantByGoodsId(goodsId);
-        // 참여자가 아예 없는 경우가 있기 때문에 에러로 반환해선 안된다.
-        if (participants == null || participants.isEmpty()) {
-            return Collections.emptyList();
-        }
+        if(!Objects.equals(loginUserId, info.getSellerId())) throw new CustomException("거래중지는 판매자만 가능합니다.", HttpStatus.BAD_REQUEST);
 
-        return participants;
+        // 기존 최고 입찰자 예치금 unlock + 지갑 내역 BIDUNLOCK 기록
+        unlockBidAmount(info.getBidderId(), goodsId, info.getCurrentBidAmount());
+
+        // 경매 상태 -> '패찰'로 업데이트
+        updateAuctionStatusOrThrow(goodsId, AuctionStatus.STOPPED);
+
     }
+
+
 
     /**
      * 경매 종료 스케줄러
@@ -296,7 +296,7 @@ public  class BidServiceImpl implements BidService {
      * @param auctionStatus 경매상태(enum 타입) 
      */
     private void updateAuctionStatusOrThrow(Long goodsId, AuctionStatus auctionStatus) {
-        int result = goodsMapper.updateAuctionStatus(goodsId, auctionStatus);
+        int result = bidMapper.updateAuctionStatus(goodsId, auctionStatus);
         if (result < 1) {
             throw new CustomException(
                     "경매 상태 업데이트에 실패하였습니다.",

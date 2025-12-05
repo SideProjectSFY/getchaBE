@@ -4,23 +4,6 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ssafy.backend.bid.model.BidMapper">
 
-    <!-- 경매에 입찰한 참여자 리스트 조회 -->
-    <select id="selectBidParticipantByGoodsId" parameterType="Long" resultType="com.ssafy.backend.bid.model.BidResponseDto$BidParticipant">
-        SELECT b.id AS bidId,
-            bidder_id,
-            u.nickname AS bidderNickName,
-            ta.poster_url AS bidderProfileFilePath,
-            bid_amount,
-            is_highest
-        FROM bid b
-            LEFT JOIN user u
-                ON b.bidder_id = u.id
-            LEFT JOIN tmdb_anime ta
-                ON ta.id = u.liked_anime_id1
-        WHERE goods_id = #{goodsId}
-        ORDER BY bid_amount DESC;
-    </select>
-
     <!-- 굿즈 글에 대한 금액 및 입찰자 정보 조회 -->
     <select id="selectGoodsPriceAndBidInfoByGoodsId" parameterType="Long" resultType="com.ssafy.backend.bid.model.BidInternalDto$GoodsPriceBidInfo">
         SELECT
@@ -123,4 +106,13 @@
           AND auction_status IN ('WAIT', 'PROCEEDING')
           AND deleted_at IS NULL
     </select>
+
+    <!-- 굿즈 경매 상태 업데이트 -->
+    <update id="updateAuctionStatus">
+        UPDATE goods
+        SET
+        auction_status = #{auctionStatus}
+        WHERE id = #{goodsId}
+        AND deleted_at IS NULL;
+    </update>
 </mapper>

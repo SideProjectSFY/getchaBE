@@ -1,5 +1,6 @@
 package com.ssafy.backend.bid.model;
 
+import com.ssafy.backend.common.enums.AuctionStatus;
 import com.ssafy.backend.goods.model.Goods;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -8,12 +9,6 @@ import java.util.List;
 @Mapper
 public interface BidMapper {
 
-    /**
-     * 경매에 입찰한 참여자 리스트 조회
-     * @param goodsId 굿즈Id(pk)
-     * @return 경매 입찰자 리스트 결과 반환
-     */
-    List<BidResponseDto.BidParticipant> selectBidParticipantByGoodsId(Long goodsId);
 
     /**
      * 굿즈 글에 대한 금액 및 입찰자 정보 조회 (For update)
@@ -63,4 +58,10 @@ public interface BidMapper {
      */
     List<Goods> selectEndedAuctions();
 
+    /**
+     * 굿즈 경매 상태 업데이트
+     * @param goodsId 굿즈ID(pk)
+     * @return 굿즈 경매 상태 업데이트 결과반환
+     * */
+    int updateAuctionStatus(Long goodsId, AuctionStatus auctionStatus);
 }
