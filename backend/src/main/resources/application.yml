@@ -7,8 +7,7 @@ spring:
 # -- 파일업로드 경로 설정 --
 file:
   upload:
-    prefix: ..
-    path: /goodsImageFiles
+    path: ../goodsImageFiles
 
 
 # -- mybatis 설정 --

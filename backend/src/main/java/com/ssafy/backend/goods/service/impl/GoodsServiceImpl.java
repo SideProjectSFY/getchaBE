@@ -1,9 +1,9 @@
 package com.ssafy.backend.goods.service.impl;
 
-import com.ssafy.backend.bid.model.BidMapper;
 import com.ssafy.backend.common.PageResponse;
 import com.ssafy.backend.common.enums.AuctionStatus;
 import com.ssafy.backend.common.exception.CustomException;
+import com.ssafy.backend.common.service.FileServie;
 import com.ssafy.backend.goods.model.*;
 import com.ssafy.backend.goods.service.GoodsService;
 import lombok.RequiredArgsConstructor;
@@ -14,8 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -30,10 +28,7 @@ public class GoodsServiceImpl implements GoodsService {
      * - 토큰 정보 파싱 후 사용자 정보 받아오기
      */
     private final GoodsMapper goodsMapper;
-
-    // 실제 서버 저장 상대경로 prefix
-    @Value("${file.upload.prefix}")
-    private String filePrefix;
+    private final FileServie fileServie;
 
     // 실제 서버 저장 상대경로 filePath
     @Value("${file.upload.path}")
@@ -78,30 +73,29 @@ public class GoodsServiceImpl implements GoodsService {
         Long goodsId = goods.getId();
 
         // 4. 이미지 업로드
-        int sortOrder = 1;
-        for (MultipartFile file : imageFiles) {
+        if(imageFiles != null || !imageFiles.isEmpty()) {
+            int sortOrder = 1;
 
-            if(file.isEmpty()) continue;
+            for (MultipartFile file : imageFiles) {
 
-            if(sortOrder > 5) break;
+                if(file.isEmpty()) continue;
+                if(sortOrder > 5) break;
 
-            String originalFilename = file.getOriginalFilename();
-            String storedFilename = generateStoredFilename(originalFilename);
+                // 실제 파일 저장 및 유니크한 파일명 반환
+                String storedFilename = fileServie.saveFile(file);
 
-            // 실제 파일 저장
-            saveFileToLocal(file, storedFilename);
+                GoodsImage imageFile = GoodsImage.builder()
+                        .goodsId(goodsId)
+                        .originFilename(file.getOriginalFilename())
+                        .storedFilename(storedFilename)
+                        .filePath(filePath + "/" + storedFilename)
+                        .fileSize(file.getSize())
+                        .sortOrder(sortOrder++)
+                        .build();
 
-            GoodsImage imageFile = GoodsImage.builder()
-                    .goodsId(goodsId)
-                    .originFilename(originalFilename)
-                    .storedFilename(storedFilename)
-                    .filePath(filePath + "/" + storedFilename)
-                    .fileSize(file.getSize())
-                    .sortOrder(sortOrder++)
-                    .build();
-
-            // DB 저장
-            goodsMapper.insertFiles(imageFile);
+                // DB 저장
+                goodsMapper.insertFiles(imageFile);
+            }
         }
 
     }
@@ -109,6 +103,7 @@ public class GoodsServiceImpl implements GoodsService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<GoodsResponseDto.GoodsCard> getAllGoods(GoodsRequestDto.GoodsLookUp goodsLookUp) {
 
         goodsLookUp.setPageOffset(goodsLookUp.getOffset());
@@ -125,6 +120,7 @@ public class GoodsServiceImpl implements GoodsService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public GoodsResponseDto.GoodsDetailAll getGoodsById(Long goodsId) {
         // TODO : 본인이 쓴 글인지 확인
         Long loginUserId = 1L;
@@ -157,11 +153,12 @@ public class GoodsServiceImpl implements GoodsService {
 
     @Override
     @Transactional
-    public boolean updateGoods(GoodsRequestDto.GoodsModify goodsModify, List<MultipartFile> imageFiles) {
+    public void updateGoods(GoodsRequestDto.GoodsModify goodsModify, List<MultipartFile> newImageFiles) {
         // TODO : 본인이 쓴 글인지 확인하는 과정 핋요
         Long loginUserId = 1L;
 
         AuctionStatus auctionStatus = goodsModify.getAuctionStatus();
+        Long goodsId = goodsModify.getGoodsId();
         Long sellerId = goodsModify.getSellerId();
         LocalDateTime createdAt = goodsModify.getCreatedAt();
         int duration = goodsModify.getDuration();
@@ -176,18 +173,15 @@ public class GoodsServiceImpl implements GoodsService {
 
         // 경매기간(duration) 수정이 될 경우를 대비하여, auction_end_at 도 작성일시를 기준으로 수정하기
         LocalDateTime auctionEndAt = createdAt.plusDays(duration);
-        goodsModify.setAuctionEndAt(auctionEndAt);
 
         // 굿즈 데이터 수정
-        int updateGoodsResult = goodsMapper.updateGoods(goodsModify);
+        int updateGoodsResult = goodsMapper.updateGoods(goodsModify, loginUserId, auctionEndAt);
         if(updateGoodsResult < 1)
             throw new CustomException("굿즈 글 수정에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
 
 
-        /* TODO : 이미지 리스트 수정
-        *  1. 삭제 요청된 이미지 삭제 (DB + 실제 파일 Hard 삭제)
-        *  2. 유지되는 기존 이미지들의 sort_order 업데이트
-        *  3. 신규 이미지 업로드 & INSERT
+        /*
+        *  이미지 리스트 수정
         * */
 
         // 1. 삭제 요청된 이미지 삭제 (DB + 실제 파일 Hard 삭제)
@@ -195,16 +189,48 @@ public class GoodsServiceImpl implements GoodsService {
         if (deleteImageIds != null && !deleteImageIds.isEmpty()) {
             List<GoodsImage> deleteImages = goodsMapper.selectDeleteImageFileByFileId(deleteImageIds);
 
+            // 실제 로컬에서 파일 삭제 (용량 문제로 hard 삭제처리)
             for (GoodsImage img : deleteImages) {
-                File file = new File(filePath + File.separator + img.getStoredFilename());
-                if (file.exists()) file.delete();
+                fileServie.deleteFile(img.getStoredFilename());
             }
 
+            // DB 에서 파일 row 삭제
             int deleteImageFile = goodsMapper.deleteGoodsImageByFileId(deleteImageIds);
             if(deleteImageFile < 1) throw new CustomException("이미지 삭제에 실패하였습니다.", HttpStatus.BAD_REQUEST);
         }
 
-        return false;
+        // 2. 유지되는 기존 이미지들의 sort_order 업데이트
+        if (goodsModify.getExistingImages() != null && !goodsModify.getExistingImages().isEmpty()) {
+            int updateImageSortOrder = goodsMapper.updateImageSortOrder(goodsId, goodsModify.getExistingImages());
+            if(updateImageSortOrder < 1)
+                throw new CustomException("기존 이미지 순서 업데이트에 실패하였습니다.", HttpStatus.BAD_REQUEST);
+        }
+
+
+        // 3. 신규 이미지 업로드 & INSERT
+        if (newImageFiles != null && !newImageFiles.isEmpty()) {
+            for (MultipartFile file : newImageFiles) {
+
+                // 파일명 생성
+                String storedFilename = fileServie.saveFile(file);
+
+                // sort_order: 기존 이미지 최대값 + 1
+                Integer nextOrder = goodsMapper.selectNextSortOrder(goodsId);
+
+                GoodsImage imageFile = GoodsImage.builder()
+                        .goodsId(goodsId)
+                        .originFilename(file.getOriginalFilename())
+                        .storedFilename(storedFilename)
+                        .filePath(filePath + "/" + storedFilename)
+                        .fileSize(file.getSize())
+                        .sortOrder(nextOrder)
+                        .build();
+
+                // DB 저장
+                goodsMapper.insertFiles(imageFile);
+            }
+        }
+
     }
 
     @Override
@@ -227,45 +253,4 @@ public class GoodsServiceImpl implements GoodsService {
         }
     }
 
-
-    /**
-     * 사용자가 업로드한 파일명을 다른 사용자가 올린 파일명과 중복되지 않게 유니크한
-     * 로컬 서버 저장용 파일명 생성하는 메서드
-     * @param original 기존파일명
-     * @return 로컬 서버 저장용 파일명
-     */
-    private String generateStoredFilename(String original) {
-        String uuid = UUID.randomUUID().toString();
-        return uuid + "_" + original;
-    }
-
-    /**
-     * 사용자 로컬에서 업로드된 파일들을 로컬 서버에 저장하는 메서드
-     * @param file 사용자가 업로드한 파일
-     * @param storedFilename 로직에서 만든 유니크한 fileName
-     */
-    private void saveFileToLocal(MultipartFile file, String storedFilename) {
-        try {
-            // 실제 저장될 물리 경로
-            String fullPath = filePrefix + filePath;
-
-            // 물리 경로에 굿즈이미지를 저장할 폴더가 없다면 만들기
-            File dir = new File(fullPath);
-            if (!dir.exists()) dir.mkdirs();
-
-            // 로컬 개발환경 물리 경로에 저장
-            File savedFile = new File(dir.getAbsolutePath(), storedFilename);
-
-            if(!savedFile.exists()) {
-                // MultipartFile 의 내용을 지정된 경로로 그대로 복사/저장함
-                file.transferTo(savedFile);
-                // 잘 저장되었는지 확인하기 위한 파일 사이즈 로그 찍기
-                log.info("fileService.uploadFile -> fileSize :: " + file.getSize());
-            }
-
-        } catch (IOException e) {
-            log.warn(e.getMessage());
-            throw new CustomException("굿즈 이미지파일 업로드에 실패하였습니다.", HttpStatus.BAD_REQUEST);
-        }
-    }
 }

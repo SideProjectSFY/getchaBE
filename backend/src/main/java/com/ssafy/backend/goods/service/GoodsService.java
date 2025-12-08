@@ -34,10 +34,9 @@ public interface GoodsService {
      * 굿즈 글 정보 수정
      *
      * @param goodsModify 수정된 굿즈 정보
-     * @param imageFiles   수정된 굿즈 이미지 파일리스트
-     * @return 수정 성공 여부
+     * @param newImageFiles   새로 추가된 굿즈 이미지 파일리스트
      */
-    boolean updateGoods(GoodsRequestDto.GoodsModify goodsModify, List<MultipartFile> imageFiles);
+    void updateGoods(GoodsRequestDto.GoodsModify goodsModify, List<MultipartFile> newImageFiles);
 
     /**
      * 굿즈 삭제

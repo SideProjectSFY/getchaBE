@@ -173,7 +173,11 @@
 
     <!-- 특정 굿즈 글의 다중 이미지 리스트 조회 -->
     <select id="selectImagesByGoodsId" parameterType="Long" resultType="com.ssafy.backend.goods.model.GoodsResponseDto$GoodsDetailImage">
-        select id, goods_id, file_path, sort_order
+        select
+            id AS imageId,
+            goods_id,
+            file_path,
+            sort_order
         from goods_image
         where goods_id = #{goodsId}
         order by sort_order;
@@ -183,17 +187,17 @@
     <update id="updateGoods" parameterType="com.ssafy.backend.goods.model.GoodsRequestDto$GoodsModify">
         UPDATE goods
         SET
-            title = #{title},
-            anime_id = #{animeId},
-            category = #{category},
-            description = #{description},
-            start_price = #{startPrice},
-            instant_buy_price = #{instantBuyPrice},
-            duration = #{duration},
-            auction_end_at = #{auctionEndAt}
+            title = #{goodsModify.title},
+            anime_id = #{goodsModify.animeId},
+            category = #{goodsModify.category},
+            description = #{goodsModify.description},
+            start_price = #{goodsModify.startPrice},
+            instant_buy_price = #{goodsModify.instantBuyPrice},
+            duration = #{goodsModify.duration},
+            auction_end_at = #{auctionEndAt},
             updated_at = NOW()
         WHERE auction_status = 'WAIT'
-            AND id = #{goodsId}
+            AND id = #{goodsModify.goodsId}
             AND seller_id = #{loginUserId}
             AND deleted_at IS NULL;
     </update>
@@ -253,8 +257,21 @@
         </foreach>;
     </delete>
 
-    <!-- 굿즈 다중 이미지(=파일) 수정 -->
-    <update id="updateFiles" parameterType="java.util.List">
-
+    <!--  기존 이미지 sort_order 업데이트 -->
+    <update id="updateImageSortOrder">
+        <foreach collection="images" item="img" separator=";">
+            UPDATE goods_image
+            SET sort_order = #{img.sortOrder}
+            WHERE id = #{img.imageId}
+            AND goods_id = #{goodsId}
+        </foreach>
     </update>
+
+    <!-- 신규 이미지 next sort_order 조회 -->
+    <select id="selectNextSortOrder">
+        SELECT COALESCE(MAX(sort_order), 0) + 1
+        FROM goods_image
+        WHERE goods_id = #{goodsId}
+    </select>
+
 </mapper>

@@ -89,7 +89,7 @@ public class GoodsResponseDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class GoodsDetailImage {
-        private Long id;
+        private Long imageId;
         private Long goodsId;
         private String filePath;
         private Integer sortOrder;

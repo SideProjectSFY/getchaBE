@@ -2,8 +2,10 @@ package com.ssafy.backend.goods.model;
 
 import com.ssafy.backend.common.enums.AuctionStatus;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -69,6 +71,22 @@ public interface GoodsMapper {
     List<GoodsResponseDto.GoodsDetailImage> selectImagesByGoodsId(Long goodsId);
 
     /**
+     * 기존 이미지 순서 업데이트
+     * @param images 기존이미지 정보
+     * @return 결과 반환
+     */
+    int updateImageSortOrder(@Param("goodsId") Long goodsId,
+                            @Param("images") List<GoodsRequestDto.GoodsExistingImages> images);
+
+
+    /**
+     * 신규 이미지의 다음 순서 조회
+     * @param goodsId 굿즈Id(pk)
+     * @return 다음 순서 결과 반환
+     */
+    Integer selectNextSortOrder(Long goodsId);
+
+    /**
      * 삭제할 이미지파일ID 리스트 의 정보 조회
      * @param deleteImageIds 삭제할 이미지파일ID 리스트
      * @return 이미지 리스트 결과 반환
@@ -87,7 +105,9 @@ public interface GoodsMapper {
      * @param goodsModify 수정할 굿즈 정보
      * @return 굿즈 글 수정 결과 반환
      * */
-    int updateGoods(GoodsRequestDto.GoodsModify goodsModify);
+    int updateGoods(@Param("goodsModify") GoodsRequestDto.GoodsModify goodsModify,
+                    @Param("loginUserId") Long loginUserId,
+                    @Param("auctionEndAt") LocalDateTime auctionEndAt);
 
     /**
      * 굿즈 글 삭제 (*경매 대기/종료 일 경우)

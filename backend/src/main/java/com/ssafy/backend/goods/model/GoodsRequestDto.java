@@ -28,7 +28,7 @@ public class GoodsRequestDto {
         @NotNull
         private Long animeId;
         @Schema(description = "카테고리", example = "FIGURE")
-        @NotBlank
+        @NotNull
         private Category category;
 
         @NotBlank
@@ -63,11 +63,8 @@ public class GoodsRequestDto {
     public static class GoodsModify {
         @Schema(name = "deleteImageIds", description = "삭제할 이미지파일ID 리스트")
         private List<Long> deleteImageIds;
-
-        @Schema(hidden = true)
-        private Long loginUserId;
-        @Schema(hidden = true)
-        private LocalDateTime auctionEndAt;
+        @Schema(name = "existingImages", description = "기존 이미지 정보 리스트")
+        private List<GoodsExistingImages> existingImages;
 
         @NotNull(message = "판매자ID는 필수값입니다.")
         private Long sellerId;
@@ -80,26 +77,32 @@ public class GoodsRequestDto {
         @NotBlank
         private String description;
 
-        @NotBlank
+        @NotNull
         @Range(min = 1000, max = 5000000, message = "금액은 1000원 이상 500만원 이하이어야 합니다.")
         private Integer startPrice;
         @Range(min = 1000, max = 5000000, message = "금액은 1000원 이상 500만원 이하이어야 합니다.")
         private Integer instantBuyPrice;
 
         @Schema(description = "경매상태", example = "WAIT")
-        @NotBlank(message = "경매상태가 유효하지 않습니다.")
+        @NotNull(message = "경매상태가 유효하지 않습니다.")
         private AuctionStatus auctionStatus;
         @Schema(description = "카테고리", example = "FIGURE")
-        @NotBlank(message = "카테고리가 유효하지 않습니다.")
+        @NotNull(message = "카테고리가 유효하지 않습니다.")
         private Category category;
 
-        @NotBlank
+        @NotNull
         @Max(value = 14, message = "경매기간은 최대 14일까지 입니다.")
         private Integer duration;
         @NotNull(message = "작성일시는 필수값입니다.")
         private LocalDateTime createdAt;
 
+    }
 
+    @Getter
+    @Setter
+    public static class GoodsExistingImages {
+        private Long imageId;
+        private int sortOrder;
     }
 
 }

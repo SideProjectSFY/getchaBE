@@ -7,8 +7,10 @@ import com.ssafy.backend.goods.service.GoodsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Encoding;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,6 +18,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,11 +46,12 @@ public class GoodsController {
             @ApiResponse(responseCode = "400", description = "굿즈 이미지파일 업로드에 실패하였습니다."),
             @ApiResponse(responseCode = "503", description = "굿즈 등록에 실패하였습니다.")
     })
-    @PostMapping
-    public ResponseEntity<String> postGoods(@Valid @RequestPart(value = "goodRegister") GoodsRequestDto.GoodsRegister goodsRegister,
-                                            @RequestPart(value = "imageFiles", required = false)
-                                            @Schema(type = "array", example = "파일", description = "다중 이미지 업로드",
-                                            implementation = MultipartFile.class) List<MultipartFile> imageFiles) {
+    @RequestBody(content = @Content(
+            encoding = @Encoding(name = "goodsRegister", contentType = MediaType.APPLICATION_JSON_VALUE)))
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> postGoods(
+            @Valid @RequestPart("goodRegister") GoodsRequestDto.GoodsRegister goodsRegister,
+            @RequestPart(value = "imageFiles", required = false) List<MultipartFile> imageFiles) {
         goodsService.addGoods(goodsRegister, imageFiles);
         return new ResponseEntity<>("굿즈가 성공적으로 등록되었습니다.",HttpStatus.CREATED);
     }
@@ -110,10 +114,20 @@ public class GoodsController {
             summary = "굿즈 글 정보 수정",
             description = "굿즈 글의 정보를 수정합니다."
     )
-    @PutMapping
-    public ResponseEntity<?> updateGoods(@Valid @RequestBody GoodsRequestDto.GoodsModify goodsModify, List<MultipartFile> imageFiles) {
-        boolean result = goodsService.updateGoods(goodsModify, imageFiles);
-        return ResponseEntity.ok(null);
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "굿즈가 성공적으로 수정되었습니다."),
+            @ApiResponse(responseCode = "403", description = ""),
+            @ApiResponse(responseCode = "404", description = "수정 권한이 없습니다."),
+            @ApiResponse(responseCode = "503", description = "굿즈 글 수정에 실패하였습니다."),
+    })
+    @RequestBody(content = @Content(
+            encoding = @Encoding(name = "goodsModify", contentType = MediaType.APPLICATION_JSON_VALUE)))
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> updateGoods(
+            @Valid @RequestPart(value = "goodsModify") GoodsRequestDto.GoodsModify goodsModify,
+            @RequestPart(value = "newImageFiles", required = false) List<MultipartFile> newImageFiles) {
+        goodsService.updateGoods(goodsModify, newImageFiles);
+        return new ResponseEntity<>("굿즈가 성공적으로 수정되었습니다.", HttpStatus.OK);
     }
 
     @Operation(
