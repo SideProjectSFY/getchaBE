@@ -21,19 +21,11 @@ import java.util.*;
 @Service
 public class CommentServiceImpl implements CommentService {
 
-    /**
-     * TODO
-     * 1. 필수 !!!
-     * - 토큰 정보 파싱 후 사용자 정보 받아오기
-     */
-
     private final CommentMapper commentMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void addComment(CommentRequestDTO.CommentRegister commentRegister) {
-        // TODO : 로그인 되었는지 체크 !
-        Long writerId = 1L; // TODO : 로그인 기능 구현 전이어서 현재는 고정값
+    public void addComment(Long loginUserId, CommentRequestDTO.CommentRegister commentRegister) {
 
         // 굿즈 글 존재 유무 확인
         int checkGoodsId = commentMapper.checkGoodsId(commentRegister.getGoodsId());
@@ -49,7 +41,7 @@ public class CommentServiceImpl implements CommentService {
         // parentId 가 null 이면 댓글, 대댓글이면 값이 존재한다.
         Comment comment = Comment.builder()
                 .goodsId(commentRegister.getGoodsId())
-                .writerId(writerId)
+                .writerId(loginUserId)
                 .parentId(commentRegister.getParentId())
                 .content(commentRegister.getContent())
                 .build();
@@ -61,9 +53,9 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public List<CommentResponseDTO> getAllComment(Long goodsId) {
+    public List<CommentResponseDTO> getAllComment(Long loginUserId ,Long goodsId) {
 
-        List<CommentResponseDTO> commentList = commentMapper.selectAllCommentByGoodsId(goodsId);
+        List<CommentResponseDTO> commentList = commentMapper.selectAllCommentByGoodsId(loginUserId, goodsId);
         if(commentList == null || commentList.isEmpty()) return Collections.emptyList();
 
         Map<Long, CommentResponseDTO> map = new HashMap<>();
@@ -97,21 +89,17 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public void updateComment(CommentRequestDTO.CommentModify commentModify) {
-        // TODO : 본인이 쓴 댓글인지 확인 필요 (토큰에서 가져오기)
-        Long loginUserId = 1L;
-        commentModify.setLoginUserId(loginUserId);
+    public void updateComment(Long loginUserId ,CommentRequestDTO.CommentModify commentModify) {
 
-        int updateResult = commentMapper.updateComment(commentModify);
+        int updateResult = commentMapper.updateComment(loginUserId, commentModify);
         if(updateResult < 1) throw new CustomException("댓글 or 대댓글 수정에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
 
     }
 
     @Override
     @Transactional
-    public void deleteComment(Long commentId) {
-        // TODO : 본인이 쓴 댓글인지 확인 필요 (토큰에서 가져오기)
-        Long loginUserId = 1L;
+    public void deleteComment(Long loginUserId ,Long commentId) {
+
         Long parentId = null;
         LocalDateTime deletedAt = null;
 
@@ -120,9 +108,10 @@ public class CommentServiceImpl implements CommentService {
         // 이건 parentId 가 null 이 아닐때만 확인해야하는것.
         Map<String, Object> parentCommentMap = commentMapper.selectParentIdAndDeletedAtByCommentId(commentId);
 
-        if(!Objects.isNull(parentCommentMap)) {
+        // 부모 댓글이 삭제된 경우 부모ID, 부모의 삭제일시 넣어주기
+        if(!Objects.isNull(parentCommentMap) && parentCommentMap.get("deleted_at") != null) {
             parentId = (Long)parentCommentMap.get("parent_id");
-            deletedAt = ((Timestamp) parentCommentMap.get("deleted_at")).toLocalDateTime();
+            deletedAt = ((Timestamp) parentCommentMap.get("deleted_at")).toLocalDateTime(); // 부모댓글의 삭제일시
         }
 
         // 댓글이든 대댓글이든, 자식 댓글이 있는지 확인할 수 있음 ! 

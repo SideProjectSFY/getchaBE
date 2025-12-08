@@ -7,11 +7,11 @@ import java.util.List;
 
 public interface CommentService {
 
-    void addComment(CommentRequestDTO.CommentRegister commentRegister);
+    void addComment(Long loginUserId, CommentRequestDTO.CommentRegister commentRegister);
 
-    List<CommentResponseDTO> getAllComment(Long goodsId);
+    List<CommentResponseDTO> getAllComment(Long loginUserId, Long goodsId);
 
-    void updateComment(CommentRequestDTO.CommentModify commentModify);
+    void updateComment(Long loginUserId, CommentRequestDTO.CommentModify commentModify);
 
-    void deleteComment(Long commentId);
+    void deleteComment(Long loginUserId, Long commentId);
 }

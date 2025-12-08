@@ -24,8 +24,6 @@ public class CommentRequestDTO {
     @Getter
     @Setter
     public static class CommentModify {
-        @Schema(hidden = true)
-        private Long loginUserId;
         @NotBlank
         private String content;
         @NotNull

@@ -13,7 +13,6 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.validator.constraints.Range;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter

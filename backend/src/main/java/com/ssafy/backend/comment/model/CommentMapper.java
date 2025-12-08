@@ -1,6 +1,8 @@
 package com.ssafy.backend.comment.model;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.springframework.security.core.parameters.P;
 
 import java.util.List;
 import java.util.Map;
@@ -31,17 +33,20 @@ public interface CommentMapper {
 
     /**
      * 해당 굿즈 글의 댓글과 대댓글 전체 조회
+     * @param loginUserId 로그인한 사용자Id
      * @param goodsId 굿즈ID 정보
      * @return 댓글과 대댓글 전체 조회 리스트
      */
-    List<CommentResponseDTO> selectAllCommentByGoodsId(Long goodsId);
+    List<CommentResponseDTO> selectAllCommentByGoodsId(Long loginUserId, Long goodsId);
 
     /**
      * 댓글 또는 대댓글 수정
+     * @param loginUserId 로그인한 사용자Id
      * @param commentModify 수정할 댓글 또는 대댓글 내용
      * @return 댓글 또는 대댓글 수정 결과 반환
      */
-    int updateComment(CommentRequestDTO.CommentModify commentModify);
+    int updateComment(@Param("loginUserId") Long loginUserId
+            , @Param("commentModify") CommentRequestDTO.CommentModify commentModify);
 
     /**
      * 자식 댓글의 개수 조회

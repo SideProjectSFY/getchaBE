@@ -24,12 +24,13 @@
     </insert>
 
     <!-- 특정 굿즈의 댓글 (+ 대댓글, 계층형 구조로 나눌 예정) -->
-    <select id="selectAllCommentByGoodsId" parameterType="Long" resultType="com.ssafy.backend.comment.model.CommentResponseDTO">
+    <select id="selectAllCommentByGoodsId" resultType="com.ssafy.backend.comment.model.CommentResponseDTO">
         SELECT
             c.id          AS commentId,
             parent_id     AS parentId,
             goods_id      AS goodsId,
             writer_id     AS writerId,
+            (writer_id = #{loginUserId}) AS checkWriter,
             u.nickname    AS writerNickName,
             ta.poster_url AS writerProfileFilePath,
             content,
@@ -46,9 +47,9 @@
     <!-- 댓글 수정하기 -->
     <update id="updateComment" parameterType="com.ssafy.backend.comment.model.CommentRequestDTO$CommentModify">
         UPDATE comment
-        SET content = #{content},
+        SET content = #{commentModify.content},
             updated_at = NOW()
-        WHERE id = #{commentId}
+        WHERE id = #{commentModify.commentId}
           AND writer_id = #{loginUserId}
           AND deleted_at IS NULL;
     </update>

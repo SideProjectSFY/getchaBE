@@ -12,6 +12,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,23 +40,11 @@ public class CommentController {
             @ApiResponse(responseCode = "503", description = "댓글 or 대댓글 등록에 실패하였습니다")
     })
     @PostMapping
-    public ResponseEntity<String> postComment(@Valid @ModelAttribute CommentRequestDTO.CommentRegister commentRegister) {
-        commentService.addComment(commentRegister);
+    public ResponseEntity<String> postComment(
+            @AuthenticationPrincipal Long loginUserId,
+            @Valid @ModelAttribute CommentRequestDTO.CommentRegister commentRegister) {
+        commentService.addComment(loginUserId, commentRegister);
         return new ResponseEntity<>("댓글 or 대댓글이 성공적으로 등록되었습니다.", HttpStatus.CREATED);
-    }
-
-    @Operation(
-            summary = "댓글 or 대댓글 수정",
-            description = "댓글 or 대댓글을 수정합니다."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "댓글 or 대댓글이 성공적으로 수정되었습니다."),
-            @ApiResponse(responseCode = "503", description = "댓글 or 대댓글 수정에 실패하였습니다")
-    })
-    @PutMapping
-    public ResponseEntity<String> updateComment(@Valid @ModelAttribute CommentRequestDTO.CommentModify commentModify) {
-        commentService.updateComment(commentModify);
-        return new ResponseEntity<>("댓글 or 대댓글이 성공적으로 수정되었습니다.", HttpStatus.OK);
     }
 
     @Operation(
@@ -67,9 +56,27 @@ public class CommentController {
             @ApiResponse(responseCode = "404", description = "등록된 댓글이 없습니다."),
     })
     @GetMapping
-    public ResponseEntity<List<CommentResponseDTO>> getAllComment(@NotNull @RequestParam Long goodsId) {
-        List<CommentResponseDTO> resultList = commentService.getAllComment(goodsId);
+    public ResponseEntity<List<CommentResponseDTO>> getAllComment(
+            @AuthenticationPrincipal Long loginUserId,
+            @NotNull @RequestParam Long goodsId) {
+        List<CommentResponseDTO> resultList = commentService.getAllComment(loginUserId, goodsId);
         return ResponseEntity.ok(resultList);
+    }
+
+    @Operation(
+            summary = "댓글 or 대댓글 수정",
+            description = "댓글 or 대댓글을 수정합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "댓글 or 대댓글이 성공적으로 수정되었습니다."),
+            @ApiResponse(responseCode = "503", description = "댓글 or 대댓글 수정에 실패하였습니다")
+    })
+    @PutMapping
+    public ResponseEntity<String> updateComment(
+            @AuthenticationPrincipal Long loginUserId,
+            @Valid @ModelAttribute CommentRequestDTO.CommentModify commentModify) {
+        commentService.updateComment(loginUserId, commentModify);
+        return new ResponseEntity<>("댓글 or 대댓글이 성공적으로 수정되었습니다.", HttpStatus.OK);
     }
 
 
@@ -82,8 +89,10 @@ public class CommentController {
             @ApiResponse(responseCode = "503", description = "댓글 or 대댓글 삭제에 실패하였습니다")
     })
     @DeleteMapping
-    public ResponseEntity<String> deleteComment(@NotNull @RequestParam Long commentId) {
-        commentService.deleteComment(commentId);
+    public ResponseEntity<String> deleteComment(
+            @AuthenticationPrincipal Long loginUserId,
+            @NotNull @RequestParam Long commentId) {
+        commentService.deleteComment(loginUserId, commentId);
         return new ResponseEntity<>("댓글 or 대댓글이 성공적으로 삭제되었습니다.", HttpStatus.OK);
     }
 
