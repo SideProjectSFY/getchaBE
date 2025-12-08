@@ -27,13 +27,6 @@ public interface GoodsMapper {
     void insertFiles(GoodsImage imageFile);
 
     /**
-     * 굿즈 다중 이미지(=파일) 수정
-     * @param files 다중이미지파일
-     * @return 파일들 수정 결과
-     */
-    int updateFiles(List<MultipartFile> files);
-
-    /**
      * 굿즈 카드 목록 조회 (검색/필터)
      * @param goodsLookUp 굿즈 조회용 정보
      * @return 조회된 굿즈카드 리스트

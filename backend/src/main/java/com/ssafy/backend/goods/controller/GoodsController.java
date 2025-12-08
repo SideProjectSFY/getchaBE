@@ -116,7 +116,6 @@ public class GoodsController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "굿즈가 성공적으로 수정되었습니다."),
-            @ApiResponse(responseCode = "403", description = ""),
             @ApiResponse(responseCode = "404", description = "수정 권한이 없습니다."),
             @ApiResponse(responseCode = "503", description = "굿즈 글 수정에 실패하였습니다."),
     })

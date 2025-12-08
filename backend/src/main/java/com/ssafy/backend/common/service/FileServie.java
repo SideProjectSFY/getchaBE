@@ -13,7 +13,7 @@ public interface FileServie {
 
     /**
      * 파일 삭제
-     * @param storedFilename
+     * @param storedFilename 저장된 파일명
      */
     void deleteFile(String storedFilename);
 }
