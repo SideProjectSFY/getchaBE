@@ -1,9 +1,7 @@
 package com.ssafy.backend.goods.model;
 
-import com.ssafy.backend.common.enums.AuctionStatus;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -110,11 +108,5 @@ public interface GoodsMapper {
      */
     int deleteGoods(Long goodsId, Long loginUserId);
 
-    /**
-     * 특정 굿즈 경매 상태 조회
-     * @param goodsId 경매상태 조회할 굿즈ID
-     * @return 경매 상태
-     */
-    AuctionStatus selectAuctionStatusByGoodsId(Long goodsId);
 
 }

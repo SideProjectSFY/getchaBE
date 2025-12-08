@@ -40,7 +40,6 @@ public class GoodsRequestDto {
         @Min(value = 1000, message = "최소 1000원 이상이어야합니다.")
         @Range(min = 1000, max = 5000000, message = "금액은 1000원 이상 500만원 이하이어야 합니다.")
         private Integer startPrice;
-        @Range(min = 1000, max = 5000000, message = "금액은 1000원 이상 500만원 이하이어야 합니다.")
         private Integer instantBuyPrice;
 
         @Schema(description = "경매기간(일)", example = "3", defaultValue = "3")
@@ -66,8 +65,6 @@ public class GoodsRequestDto {
         @Schema(name = "existingImages", description = "기존 이미지 정보 리스트")
         private List<GoodsExistingImages> existingImages;
 
-        @NotNull(message = "판매자ID는 필수값입니다.")
-        private Long sellerId;
         @NotNull(message = "굿즈ID 는 필수값입니다.")
         private Long goodsId;
         @NotBlank
@@ -80,12 +77,8 @@ public class GoodsRequestDto {
         @NotNull
         @Range(min = 1000, max = 5000000, message = "금액은 1000원 이상 500만원 이하이어야 합니다.")
         private Integer startPrice;
-        @Range(min = 1000, max = 5000000, message = "금액은 1000원 이상 500만원 이하이어야 합니다.")
         private Integer instantBuyPrice;
 
-        @Schema(description = "경매상태", example = "WAIT")
-        @NotNull(message = "경매상태가 유효하지 않습니다.")
-        private AuctionStatus auctionStatus;
         @Schema(description = "카테고리", example = "FIGURE")
         @NotNull(message = "카테고리가 유효하지 않습니다.")
         private Category category;
@@ -93,8 +86,6 @@ public class GoodsRequestDto {
         @NotNull
         @Max(value = 14, message = "경매기간은 최대 14일까지 입니다.")
         private Integer duration;
-        @NotNull(message = "작성일시는 필수값입니다.")
-        private LocalDateTime createdAt;
 
     }
 

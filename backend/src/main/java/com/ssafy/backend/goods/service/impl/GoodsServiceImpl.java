@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,13 +23,9 @@ import java.util.*;
 @Service
 public class GoodsServiceImpl implements GoodsService {
 
-    /**
-     * TODO
-     * 1. 필수 !!!
-     * - 토큰 정보 파싱 후 사용자 정보 받아오기
-     */
     private final GoodsMapper goodsMapper;
     private final FileServie fileServie;
+    private static final int LIMIT_AMOUNT = 5_000_000;
 
     // 실제 서버 저장 상대경로 filePath
     @Value("${file.upload.path}")
@@ -37,23 +34,26 @@ public class GoodsServiceImpl implements GoodsService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void addGoods(GoodsRequestDto.GoodsRegister goodsRegister, List<MultipartFile> imageFiles) {
-        // TODO : 로그인 되었는지 체크 !
+    public void addGoods(
+            Long loginUserId,
+            GoodsRequestDto.GoodsRegister goodsRegister,
+            List<MultipartFile> imageFiles) {
 
-        // 2. 경매기간 받아서, 종료일시 저장
-        // 시간 맞춰야해서 따로 저장
+        // 시간 맞춰야해서 작성일시따로 저장
         LocalDateTime createdAt = LocalDateTime.now();
+        // 경매기간 받아서, 종료일시 저장
         int duration = goodsRegister.getDuration();
         LocalDateTime auctionEndAt = createdAt.plusDays(duration);
 
         // 금액 검증
         Integer startPrice = goodsRegister.getStartPrice();
         Integer instantBuyPrice = goodsRegister.getInstantBuyPrice();
-        if(instantBuyPrice < startPrice)
-            throw new CustomException("즉시구매가는 시작가 이상이어야 합니다.", HttpStatus.BAD_REQUEST);
+        if(instantBuyPrice != null &&
+                instantBuyPrice < startPrice && instantBuyPrice > LIMIT_AMOUNT)
+            throw new CustomException("즉시구매가는 시작가 이상 500만원 이하여야 합니다.", HttpStatus.BAD_REQUEST);
 
         Goods goods = Goods.builder()
-                .sellerId(1L) // TODO : Token 파싱 후 넣을 userId
+                .sellerId(loginUserId)
                 .animeId(goodsRegister.getAnimeId())
                 .category(goodsRegister.getCategory())
                 .title(goodsRegister.getTitle())
@@ -106,24 +106,34 @@ public class GoodsServiceImpl implements GoodsService {
     @Transactional(readOnly = true)
     public PageResponse<GoodsResponseDto.GoodsCard> getAllGoods(GoodsRequestDto.GoodsLookUp goodsLookUp) {
 
-        goodsLookUp.setPageOffset(goodsLookUp.getOffset());
+        int page = goodsLookUp.getPage();
+        int size = goodsLookUp.getSize();
 
-        List<GoodsResponseDto.GoodsCard> goodsCardsList = goodsMapper.selectAllGoodsBySearch(goodsLookUp);
+        // 데이터 조회
+        List<GoodsResponseDto.GoodsCard> goodsCardsList =
+                Optional.ofNullable(goodsMapper.selectAllGoodsBySearch(goodsLookUp))
+                        .orElse(Collections.emptyList()); // 값이 null 일 경우 빈 리스트 던짐
 
         long totalCount = goodsMapper.countGoods(goodsLookUp);
-        if(totalCount == 0) throw new NoSuchElementException("등록된 굿즈가 없습니다.");
+        // 굿즈 글이 0개 일 경우
+        if(totalCount == 0) {
+            return new PageResponse<>(Collections.emptyList(), page, 0, 0);
+        }
 
-        int totalPages = (int) Math.ceil((double) totalCount / goodsLookUp.getSize());
+        int totalPages = (int) Math.ceil((double) totalCount / size);
 
-        return new PageResponse<>(goodsCardsList, goodsLookUp.getPage(), totalPages, totalCount);
+        // 총 페이지 수 보다 페이지 값이 크게 들어왔을 경우, 빈 리스트 보여주기
+        if (page > totalPages) {
+            return new PageResponse<>(Collections.emptyList(), page, totalPages, totalCount);
+        }
+
+        return new PageResponse<>(goodsCardsList, page, totalPages, totalCount);
     }
 
 
     @Override
     @Transactional(readOnly = true)
-    public GoodsResponseDto.GoodsDetailAll getGoodsById(Long goodsId) {
-        // TODO : 본인이 쓴 글인지 확인
-        Long loginUserId = 1L;
+    public GoodsResponseDto.GoodsDetailAll getGoodsById(Long loginUserId, Long goodsId) {
 
         // 굿즈 데이터 조회
         GoodsResponseDto.GoodsDetail goodsDetail = goodsMapper.selectGoodsById(goodsId, loginUserId);
@@ -153,26 +163,32 @@ public class GoodsServiceImpl implements GoodsService {
 
     @Override
     @Transactional
-    public void updateGoods(GoodsRequestDto.GoodsModify goodsModify, List<MultipartFile> newImageFiles) {
-        // TODO : 본인이 쓴 글인지 확인하는 과정 핋요
-        Long loginUserId = 1L;
+    public void updateGoods(
+            Long loginUserId,
+            GoodsRequestDto.GoodsModify goodsModify,
+            List<MultipartFile> newImageFiles) {
 
-        AuctionStatus auctionStatus = goodsModify.getAuctionStatus();
         Long goodsId = goodsModify.getGoodsId();
-        Long sellerId = goodsModify.getSellerId();
-        LocalDateTime createdAt = goodsModify.getCreatedAt();
         int duration = goodsModify.getDuration();
 
+        GoodsResponseDto.GoodsDetail goodsDetail = goodsMapper.selectGoodsById(goodsId, loginUserId);
+
+        // 금액 검증
+        Integer instantBuyPrice = goodsModify.getInstantBuyPrice();
+        if(instantBuyPrice != null &&
+                instantBuyPrice < goodsModify.getStartPrice() && instantBuyPrice > LIMIT_AMOUNT)
+            throw new CustomException("즉시구매가는 시작가 이상 500만원 이하여야 합니다.", HttpStatus.BAD_REQUEST);
+
         // 경매 대기 상태 검증
-        if(auctionStatus != AuctionStatus.WAIT)
+        if(goodsDetail.getAuctionStatus() != AuctionStatus.WAIT)
             throw new CustomException("경매 상태가 대기일 경우에만 수정이 가능합니다.", HttpStatus.BAD_REQUEST);
 
         // 본인이 쓴글인지 검증
-        if(!Objects.equals(sellerId, loginUserId))
-            throw new CustomException("수정 권한이 없습니다.", HttpStatus.FORBIDDEN);
+        if(!Objects.equals(goodsDetail.getSellerId(), loginUserId))
+            throw new AccessDeniedException("수정 권한이 없습니다.");
 
         // 경매기간(duration) 수정이 될 경우를 대비하여, auction_end_at 도 작성일시를 기준으로 수정하기
-        LocalDateTime auctionEndAt = createdAt.plusDays(duration);
+        LocalDateTime auctionEndAt = goodsDetail.getCreatedAt().plusDays(duration);
 
         // 굿즈 데이터 수정
         int updateGoodsResult = goodsMapper.updateGoods(goodsModify, loginUserId, auctionEndAt);
@@ -235,16 +251,20 @@ public class GoodsServiceImpl implements GoodsService {
 
     @Override
     @Transactional
-    public void deleteGoods(Long goodsId) {
-        // TODO : 본인이 쓴 글만 삭제가능 (userId 정보와 굿즈글의 sellerId 비교 후 삭제)
-        Long loginUserId = 1L;
+    public void deleteGoods(Long loginUserId, Long goodsId) {
+
+        GoodsResponseDto.GoodsDetail goodsDetail = goodsMapper.selectGoodsById(goodsId, loginUserId);
+        if(!Objects.equals(goodsDetail.getSellerId(), loginUserId)) {
+            throw new AccessDeniedException("작성자만 삭제할 수 있습니다.");
+        }
 
         // 상태 체크
-        AuctionStatus auctionStatus = goodsMapper.selectAuctionStatusByGoodsId(goodsId);
+        AuctionStatus auctionStatus = goodsDetail.getAuctionStatus();
         if(auctionStatus == null) throw new NoSuchElementException("존재하지 않는 굿즈입니다.");
 
         // 진행중이 아닐 때만 삭제 (경매 대기 or 완료 일 때만 삭제가능)
         if(auctionStatus != AuctionStatus.PROCEEDING) {
+
             int deleteResult = goodsMapper.deleteGoods(goodsId, loginUserId);
             if(deleteResult < 1) throw new CustomException("굿즈 글 삭제에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
 

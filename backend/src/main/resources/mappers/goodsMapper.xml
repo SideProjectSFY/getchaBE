@@ -85,7 +85,7 @@
                     g.auction_end_at ASC
                 </otherwise>
             </choose>
-        LIMIT #{pageOffset}, #{size}
+        LIMIT #{size} OFFSET #{offset}
     </select>
 
     <!-- 총 굿즈 글 갯수 -->
@@ -155,32 +155,36 @@
     <!-- 경매에 입찰한 참여자 리스트 조회 -->
     <select id="selectBidParticipantByGoodsId" parameterType="Long" resultType="com.ssafy.backend.goods.model.GoodsResponseDto$BidParticipant">
         SELECT
-        DENSE_RANK() OVER (ORDER BY bid_amount DESC) AS bidRank,
-        b.id AS bidId,
-        bidder_id,
-        u.nickname AS bidderNickName,
-        ta.poster_url AS bidderProfileFilePath,
-        bid_amount,
-        is_highest
+            DENSE_RANK() OVER (ORDER BY bid_amount DESC) AS bidRank,
+            b.id AS bidId,
+            bidder_id,
+            u.nickname AS bidderNickName,
+            ta.poster_url AS bidderProfileFilePath,
+            bid_amount,
+            is_highest
         FROM bid b
-        LEFT JOIN user u
-        ON b.bidder_id = u.id
-        LEFT JOIN tmdb_anime ta
-        ON ta.id = u.liked_anime_id1
+            LEFT JOIN user u
+                ON b.bidder_id = u.id
+                AND u.deleted_at IS NULL
+            LEFT JOIN tmdb_anime ta
+                ON ta.id = u.liked_anime_id1
         WHERE goods_id = #{goodsId}
         ORDER BY bid_amount DESC;
     </select>
 
     <!-- 특정 굿즈 글의 다중 이미지 리스트 조회 -->
     <select id="selectImagesByGoodsId" parameterType="Long" resultType="com.ssafy.backend.goods.model.GoodsResponseDto$GoodsDetailImage">
-        select
-            id AS imageId,
+        SELECT
+            gi.id AS imageId,
             goods_id,
             file_path,
             sort_order
-        from goods_image
-        where goods_id = #{goodsId}
-        order by sort_order;
+        FROM goods_image gi
+            JOIN goods g
+                ON g.id = gi.goods_id
+                AND g.deleted_at IS NULL
+        WHERE goods_id = #{goodsId}
+        ORDER BY sort_order;
     </select>
 
     <!-- 굿즈 글 수정 (*경매 대기 일 경우에만 가능)-->
@@ -210,14 +214,6 @@
             AND auction_status != 'PROCEEDING'
             AND seller_id = #{loginUserId}
     </update>
-
-    <!-- 특정 굿즈 경매 상태 조회 -->
-    <select id="selectAuctionStatusByGoodsId" parameterType="Long" resultType="com.ssafy.backend.common.enums.AuctionStatus">
-        SELECT auction_status
-        FROM goods
-        WHERE id = #{goodsId}
-    </select>
-
 
     <!-- 굿즈 다중 이미지(=파일) 업로드 -->
     <insert id="insertFiles" parameterType="GoodsImage" useGeneratedKeys="true" keyProperty="id">

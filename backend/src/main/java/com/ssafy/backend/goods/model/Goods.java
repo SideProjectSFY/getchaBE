@@ -23,8 +23,8 @@ public class Goods {
     private Category category;              // enum
     private String title;
     private String description;
-    private int startPrice;
-    private int instantBuyPrice;
+    private Integer startPrice;
+    private Integer instantBuyPrice;
     private AuctionStatus auctionStatus;    // enum
     private int duration;
     private LocalDateTime auctionEndAt;

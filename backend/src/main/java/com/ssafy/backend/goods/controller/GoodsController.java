@@ -20,8 +20,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 
 /**
@@ -50,9 +52,10 @@ public class GoodsController {
             encoding = @Encoding(name = "goodsRegister", contentType = MediaType.APPLICATION_JSON_VALUE)))
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> postGoods(
+            @AuthenticationPrincipal Long loginUserId,
             @Valid @RequestPart("goodRegister") GoodsRequestDto.GoodsRegister goodsRegister,
             @RequestPart(value = "imageFiles", required = false) List<MultipartFile> imageFiles) {
-        goodsService.addGoods(goodsRegister, imageFiles);
+        goodsService.addGoods(loginUserId, goodsRegister, imageFiles);
         return new ResponseEntity<>("굿즈가 성공적으로 등록되었습니다.",HttpStatus.CREATED);
     }
 
@@ -105,8 +108,10 @@ public class GoodsController {
     })
     @Parameter(name = "goodsId", description = "굿즈ID(pk)", required = true)
     @GetMapping
-    public ResponseEntity<GoodsResponseDto.GoodsDetailAll> getGoodsById(@NotNull @RequestParam Long goodsId) {
-        GoodsResponseDto.GoodsDetailAll goodsDetailAll = goodsService.getGoodsById(goodsId);
+    public ResponseEntity<GoodsResponseDto.GoodsDetailAll> getGoodsById(
+            @AuthenticationPrincipal Long loginUserId,
+            @NotNull @RequestParam Long goodsId) {
+        GoodsResponseDto.GoodsDetailAll goodsDetailAll = goodsService.getGoodsById(loginUserId, goodsId);
         return ResponseEntity.ok(goodsDetailAll);
     }
 
@@ -123,9 +128,10 @@ public class GoodsController {
             encoding = @Encoding(name = "goodsModify", contentType = MediaType.APPLICATION_JSON_VALUE)))
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> updateGoods(
+            @AuthenticationPrincipal Long loginUserId,
             @Valid @RequestPart(value = "goodsModify") GoodsRequestDto.GoodsModify goodsModify,
             @RequestPart(value = "newImageFiles", required = false) List<MultipartFile> newImageFiles) {
-        goodsService.updateGoods(goodsModify, newImageFiles);
+        goodsService.updateGoods(loginUserId, goodsModify, newImageFiles);
         return new ResponseEntity<>("굿즈가 성공적으로 수정되었습니다.", HttpStatus.OK);
     }
 
@@ -136,12 +142,14 @@ public class GoodsController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "굿즈 글이 성공적으로 삭제되었습니다."),
             @ApiResponse(responseCode = "400", description = "경매 대기 또는 종료된 후에만 삭제가 가능합니다."),
+            @ApiResponse(responseCode = "404", description = "삭제 권한이 없습니다."),
             @ApiResponse(responseCode = "503", description = "굿즈 글 삭제에 실패하였습니다")
     })
     @Parameter(name = "goodsId", description = "굿즈ID(pk)")
     @DeleteMapping
-    public ResponseEntity<String> deleteGoods(@NotNull @RequestParam Long goodsId) {
-        goodsService.deleteGoods(goodsId);
+    public ResponseEntity<String> deleteGoods(@AuthenticationPrincipal Long loginUserId,
+                                              @NotNull @RequestParam Long goodsId) {
+        goodsService.deleteGoods(loginUserId, goodsId);
         return new ResponseEntity<>("굿즈 글이 성공적으로 삭제되었습니다.", HttpStatus.OK);
     }
 
