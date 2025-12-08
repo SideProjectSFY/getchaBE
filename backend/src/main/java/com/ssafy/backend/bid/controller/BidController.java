@@ -11,6 +11,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/bid")
@@ -31,8 +32,10 @@ public class BidController {
             @ApiResponse(responseCode = "503", description = "입찰 처리 실패")
     })
     @PostMapping
-    public ResponseEntity<String> postBidForGoods(@RequestBody BidRequestDto.BidRegister bidRegister) {
-        bidService.postBidForGoods(bidRegister);
+    public ResponseEntity<String> postBidForGoods(
+            @AuthenticationPrincipal Long loginUserId,
+            @RequestBody BidRequestDto.BidRegister bidRegister) {
+        bidService.postBidForGoods(loginUserId, bidRegister);
         return new ResponseEntity<>("입찰이 완료되었습니다.", HttpStatus.CREATED);
     }
 
@@ -47,8 +50,10 @@ public class BidController {
     })
     @Parameter(name = "goodsId", description = "굿즈ID(pk)", required = true)
     @PutMapping("/stop-auction")
-    public ResponseEntity<String> updateAuctionStatus(@NotNull @RequestParam Long goodsId) {
-        bidService.updateStopAuctionStatus(goodsId);
+    public ResponseEntity<String> updateAuctionStatus(
+            @AuthenticationPrincipal Long loginUserId,
+            @NotNull @RequestParam Long goodsId) {
+        bidService.updateStopAuctionStatus(loginUserId, goodsId);
         return new ResponseEntity<>("거래 중지가 성공적으로 적용되었습니다.", HttpStatus.OK);
     }
 }

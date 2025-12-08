@@ -22,23 +22,14 @@ import java.util.Objects;
 @Service
 public  class BidServiceImpl implements BidService {
 
-    /**
-     * TODO
-     * 1. 필수 !!!
-     * - 토큰 정보 파싱 후 사용자 정보 받아오기
-     */
-
     private final BidMapper bidMapper;
 
     private static final int LIMIT_AMOUNT = 5_000_000;
     
     @Override
     @Transactional
-    public void postBidForGoods(BidRequestDto.BidRegister bidRegister) {
+    public void postBidForGoods(Long loginUserId, BidRequestDto.BidRegister bidRegister) {
         
-        // TODO : 토큰 정보에서 로그인 ID 뽑아오기
-        Long loginUserId = 10L;
-
         /*
         * <조건>
         * 1. 굿즈를 등록한 판매자는 입찰할 수 없음
@@ -197,9 +188,7 @@ public  class BidServiceImpl implements BidService {
 
     @Override
     @Transactional
-    public void updateStopAuctionStatus(Long goodsId) {
-        // TODO : 로그인 정보 받아와야함
-        Long loginUserId = 3L;
+    public void updateStopAuctionStatus(Long loginUserId, Long goodsId) {
 
         // 굿즈 + 입찰 정보 조회
         BidInternalDto.GoodsPriceBidInfo info = bidMapper.selectGoodsPriceAndBidInfoByGoodsId(goodsId);
