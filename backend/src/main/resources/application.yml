@@ -11,21 +11,37 @@ file:
 
 
 # -- mybatis 설정 --
-
 mybatis:
   mapper-locations: classpath*:/mappers/*.xml
   type-aliases-package: com.ssafy.backend
   configuration:
     map-underscore-to-camel-case: true
 
-
-# -- swagger 설정--
-
+# -- Swagger 설정 --
 springdoc:
+  api-docs:
+    enabled: true
   swagger-ui:
+    enabled: true
     path: /swagger-ui
-    groups-order: DESC               # path, query, body, response 순 출력
-    tags-sorter: alpha               # 태그를 알파벳 순으로 정렬
-    operations-sorter: method        # delete - get - path - post - put 순
-    display-request-duration: true   # 응답시간 표시 여부
-    doc-expansion: none              # api 목록 토글 형식이 펼칠지 접을지 설정
+    groups-order: DESC
+    tags-sorter: alpha
+    operations-sorter: method
+    display-request-duration: true
+    doc-expansion: none
+
+server:
+  port: 8080
+  servlet:
+    encoding:
+      enabled: true
+      force: true
+      charset: UTF-8
+
+app:
+  auth:
+    email:
+      code-expiration-minutes: 5
+
+jwt:
+  expiration: 3600000
