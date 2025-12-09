@@ -34,5 +34,5 @@ public interface WalletService {
      * @param loginUserId 로그인 사용자ID(pk)
      * @param chargeCoinAmount 충전할 돈(코인)
      */
-    void chargeCoin(Long loginUserId, WalletRequestDto.ChargeCoinAmount chargeCoinAmount);
+    Integer chargeCoin(Long loginUserId, WalletRequestDto.ChargeCoinAmount chargeCoinAmount);
 }

@@ -88,17 +88,19 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
-    public void chargeCoin(Long loginUserId, WalletRequestDto.ChargeCoinAmount chargeCoinAmount) {
+    public Integer chargeCoin(Long loginUserId, WalletRequestDto.ChargeCoinAmount chargeCoinAmount) {
 
         Integer coinAmount = chargeCoinAmount.getCoinAmount();
 
-        // 금액 검증
-        if(coinAmount < 0)
-            throw new CustomException("충전금액은 양수여야 합니다.", HttpStatus.BAD_REQUEST);
+        // 금액 입력값 검증
+        validateChargeAmount(coinAmount);
+
+        // 지갑 존재 여부 검증
+        ensureWalletExists(loginUserId);
 
         // 금액 DB 저장
-        int insertCoinResult = walletMapper.chargeCoin(loginUserId, coinAmount);
-        if(insertCoinResult < 1)
+        int updateCoinResult = walletMapper.chargeCoin(loginUserId, coinAmount);
+        if(updateCoinResult < 1)
             throw new CustomException("코인 충전에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 
         // 거래내역 충전 기록 쓰기
@@ -118,8 +120,32 @@ public class WalletServiceImpl implements WalletService {
             );
         }
 
-
         log.info("coinWallet 에 {} 원 충전되었습니다.", coinAmount);
+
+        // 충전 후 잔액 반환
+        WalletResponseDto.CoinWalletStatus coinWalletStatus = walletMapper.selectCoinWallet(loginUserId);
+        return coinWalletStatus.getBalance();
+
+    }
+
+
+    /**
+     * 충전 금액 검증
+     */
+    private void validateChargeAmount(Integer coinAmount) {
+        if (coinAmount == null || coinAmount <= 0) {
+            throw new CustomException("충전 금액은 0보다 커야 합니다.", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    /**
+     * 지갑 존재 여부 검증
+     */
+    private void ensureWalletExists(Long loginUserId) {
+        Boolean exists = walletMapper.existsWalletByUserId(loginUserId);
+        if (exists == null || !exists) {
+            throw new CustomException("지갑 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND);
+        }
     }
 
 }

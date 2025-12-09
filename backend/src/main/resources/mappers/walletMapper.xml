@@ -82,4 +82,15 @@
             #{description}
         );
     </insert>
+
+    <select id="existsWalletByUserId" parameterType="long" resultType="boolean">
+        SELECT
+            CASE
+                WHEN COUNT(*) > 0 THEN TRUE
+                ELSE FALSE
+            END
+        FROM coin_wallet
+        WHERE user_id = #{loginUserId}
+    </select>
+
 </mapper>

@@ -52,4 +52,13 @@ public interface WalletMapper {
      * @return 결과반환
      */
     int insertChargeWalletHistory(WalletRequestDto.ChargeWalletHistory chargeWalletHistory);
+
+    /**
+     * 지갑 존재 여부 검사
+     * @param loginUserId  사용자ID(pk)
+     * @return 여부 결과 반환
+     */
+    Boolean existsWalletByUserId(Long loginUserId);
+
+
 }

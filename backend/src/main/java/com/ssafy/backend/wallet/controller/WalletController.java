@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -60,12 +59,12 @@ public class WalletController {
             @ApiResponse(responseCode = "400", description = "충전금액은 양수여야 합니다."),
             @ApiResponse(responseCode = "500", description = "코인 충전에 실패했습니다."),
     })
-    @PostMapping
-    public ResponseEntity<String> chargeCoin(
+    @PostMapping("/charge")
+    public ResponseEntity<Integer> chargeCoin(
             @AuthenticationPrincipal Long loginUserId,
             @Valid @RequestBody WalletRequestDto.ChargeCoinAmount chargeCoinAmount) {
-        walletService.chargeCoin(loginUserId, chargeCoinAmount);
-        return new ResponseEntity<>("코인이 성공적으로 충전되었습니다.", HttpStatus.CREATED);
+        Integer balance = walletService.chargeCoin(loginUserId, chargeCoinAmount);
+        return ResponseEntity.ok(balance);
     }
 
 
