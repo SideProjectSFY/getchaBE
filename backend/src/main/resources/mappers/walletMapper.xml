@@ -47,7 +47,7 @@
     </select>
 
     <!-- 지갑 생성 -->
-    <insert id="createCoinWallet" useGeneratedKeys="true" keyProperty="id">
+    <insert id="createCoinWallet">
     INSERT INTO coin_wallet (
         user_id,
         balance,
