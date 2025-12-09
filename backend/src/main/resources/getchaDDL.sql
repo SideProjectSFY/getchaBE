@@ -122,7 +122,7 @@ CREATE TABLE `coin_wallet` (
 CREATE TABLE `wallet_history` (
                                   `id`	BIGINT	NOT NULL AUTO_INCREMENT,
                                   `wallet_id`	BIGINT	NOT NULL,
-                                  `goods_id`	BIGINT	NOT NULL,
+                                  `goods_id`	BIGINT	NULL,
                                   `transaction_type`	ENUM('CHARGE', 'BIDLOCK', 'BIDUNLOCK', 'INCOME', 'EXPENSE')	NOT NULL	COMMENT 'DDL 에서 ENUM 제약 걸기',
                                   `amount`	INT	NOT NULL,
                                   `description` TEXT	NULL,
