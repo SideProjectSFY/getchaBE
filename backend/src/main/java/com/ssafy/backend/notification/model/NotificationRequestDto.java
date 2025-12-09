@@ -14,6 +14,9 @@ public class NotificationRequestDto {
     @Schema(example = "AUCTION_WIN")
     private NotificationType type;
 
+    @Schema(description = "알림 이동 대상 경매 ID", example = "123")
+    private Long goodsId;
+
     @Schema(
             description = "알림 템플릿 변수",
             example = "{ \"itemName\": \"에렌 피규어\" }"

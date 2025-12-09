@@ -49,7 +49,7 @@ public class NotificationController {
             HttpServletRequest request
     ) {
         Long userId = extraUserId(request);
-        return ResponseEntity.ok(notificationService.createNotification(userId, dto.getType(), dto.getVars()));
+        return ResponseEntity.ok(notificationService.createNotification(userId, dto.getType(), dto.getVars(), dto.getGoodsId()));
     }
 
     // 3. 알림 단 건 읽음 처리

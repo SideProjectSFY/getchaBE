@@ -32,18 +32,21 @@ public class NotificationServiceImpl implements NotificationService {
     public NotificationResponseDto createNotification(
             Long userId,
             NotificationType type,
-            Map<String, String> variables
+            Map<String, String> variables,
+            Long goodsId
     ) {
         // message 문장 만들기
         // ex : type.getMessage() = "축하드립니다! {itemName} 경매에 낙찰되었습니다!"
         // ex : variables = { "itemName" : "에렌 피규어" }
         String completeMessage = applyTemplate(type.getMessage(), variables);
+        String link = buildLink(type, goodsId);
 
         // DB 저장
         Notification noti = Notification.builder()
                 .userId(userId)
                 .type(type)
                 .message(completeMessage)
+                .link(link)
                 .createdAt(LocalDateTime.now())
                 .build();
         notificationMapper.insertNotification(noti);
@@ -78,5 +81,12 @@ public class NotificationServiceImpl implements NotificationService {
             msg = msg.replace("{" + key + "}", variables.get(key));
         }
         return msg;
+    }
+
+    private String buildLink(NotificationType type, Long goodsId) {
+        if (goodsId == null || type.getLinkTemplate() == null) {
+            return null;
+        }
+        return type.getLinkTemplate().replace("{goodsId}", goodsId.toString());
     }
 }
