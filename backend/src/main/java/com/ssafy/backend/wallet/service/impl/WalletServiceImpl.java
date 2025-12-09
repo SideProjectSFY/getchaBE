@@ -1,6 +1,5 @@
 package com.ssafy.backend.wallet.service.impl;
 
-import com.ssafy.backend.bid.model.BidMapper;
 import com.ssafy.backend.common.PageResponse;
 import com.ssafy.backend.common.enums.TransactionType;
 import com.ssafy.backend.common.exception.CustomException;
