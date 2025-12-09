@@ -33,10 +33,10 @@ public interface BidMapper {
 
     /**
      * 거래 내역 등록할 정보
-     * @param walletHistoryAndUserId 거래 내역 정보
+     * @param bidWalletHistory 거래 내역 정보
      * @return 등록 결과 반환
      */
-    int insertWalletHistory(BidInternalDto.WalletHistoryAndUserId walletHistoryAndUserId);
+    int insertBidWalletHistory(BidInternalDto.BidWalletHistory bidWalletHistory);
 
     /**
      * 지갑 잔액 조회 (FOR UPDATE)
