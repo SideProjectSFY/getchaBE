@@ -7,6 +7,7 @@ import com.ssafy.backend.user.model.AnimeSelectionDto;
 import com.ssafy.backend.user.model.User;
 import com.ssafy.backend.user.model.UserMapper;
 import com.ssafy.backend.user.model.UserResponseDto;
+import com.ssafy.backend.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.*;
@@ -30,6 +31,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final WalletService walletService;
 
     /**
      * 인증코드 생성 & 발송
@@ -93,11 +95,15 @@ public class AuthServiceImpl implements AuthService {
         // 6) DB insert
         authMapper.insertUser(newUser);
 
+
         // 7) 새로 등록된 유저 ID 조회
         Long userId = authMapper.findIdByEmail(request.getEmail());
         if (userId == null) {
             throw new CustomException("회원가입 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
+        // 7-1) 회원가입 시 5만원 코인 충전 (+add!!)
+        walletService.createCoinWallet(userId);
 
         // 8) 관심 애니 정보 조회
         List<AnimeSelectionDto> animes = userMapper.findUserLikedAnimes(userId);
