@@ -25,7 +25,6 @@ import java.util.Optional;
 public class WalletServiceImpl implements WalletService {
 
     private final WalletMapper walletMapper;
-    private final BidMapper bidMapper;
     private static final int SIGN_UP_COIN = 50_000;
 
     @Override
