@@ -1,6 +1,7 @@
 package com.ssafy.backend.wallet.model;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -12,7 +13,9 @@ public interface WalletMapper {
      * @param loginUserId 사용자ID(pk)
      * @return 목록 반환
      */
-    List<WalletHistory> selectWalletHistory(Long loginUserId);
+    List<WalletResponseDto.WalletHistoryAll> selectWalletHistory(
+            @Param("loginUserId") Long loginUserId,
+            @Param("walletHistory") WalletRequestDto.SearchWalletHistory walletHistory);
 
     /**
      * 거래 내역 총 개수
@@ -31,7 +34,7 @@ public interface WalletMapper {
     /**
      * 지갑 생성
      * @param loginUserId 사용자Id(pk)
-     * @return
+     * @return 결과 반환
      */
     int createCoinWallet(Long loginUserId);
 
@@ -42,4 +45,11 @@ public interface WalletMapper {
      * @return 결과 반환
      */
     int chargeCoin(Long loginUserId, Integer coinAmount);
+
+    /**
+     * 충전 거래 내역 기록
+     * @param chargeWalletHistory 거래내역
+     * @return 결과반환
+     */
+    int insertChargeWalletHistory(WalletRequestDto.ChargeWalletHistory chargeWalletHistory);
 }

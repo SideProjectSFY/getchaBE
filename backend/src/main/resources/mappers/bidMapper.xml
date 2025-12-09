@@ -67,7 +67,7 @@
 
 
     <!-- 입찰자의 거래내역 등록 -->
-    <insert id="insertWalletHistory" parameterType="com.ssafy.backend.bid.model.BidInternalDto$WalletHistoryAndUserId">
+    <insert id="insertBidWalletHistory" parameterType="com.ssafy.backend.bid.model.BidInternalDto$BidWalletHistory">
         INSERT INTO wallet_history (
             wallet_id,
             goods_id,

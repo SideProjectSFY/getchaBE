@@ -1,13 +1,14 @@
 package com.ssafy.backend.wallet.controller;
 
 import com.ssafy.backend.common.PageResponse;
-import com.ssafy.backend.wallet.model.WalletHistory;
+import com.ssafy.backend.wallet.model.WalletRequestDto;
 import com.ssafy.backend.wallet.model.WalletResponseDto;
 import com.ssafy.backend.wallet.service.WalletService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,11 +28,11 @@ public class WalletController {
             description = "거래 내역 목록 조회합니다."
     )
     @GetMapping("/history")
-    public ResponseEntity<PageResponse<WalletHistory>> getAllWalletHistory(
-            @AuthenticationPrincipal Long loginUserId
-            // TODO : RequestDTO 작성 예정
+    public ResponseEntity<PageResponse<WalletResponseDto.WalletHistoryAll>> getAllWalletHistory(
+            @AuthenticationPrincipal Long loginUserId,
+            @Valid @ModelAttribute WalletRequestDto.SearchWalletHistory searchHistory
     ) {
-        PageResponse<WalletHistory> allWalletHistory = walletService.getAllWalletHistory(loginUserId);
+        PageResponse<WalletResponseDto.WalletHistoryAll> allWalletHistory = walletService.getAllWalletHistory(loginUserId, searchHistory);
         return ResponseEntity.ok(allWalletHistory);
     }
 
@@ -62,8 +63,8 @@ public class WalletController {
     @PostMapping
     public ResponseEntity<String> chargeCoin(
             @AuthenticationPrincipal Long loginUserId,
-            @RequestBody Integer coinWallet) {
-        walletService.chargeCoin(loginUserId, coinWallet);
+            @Valid @RequestBody WalletRequestDto.ChargeCoinAmount chargeCoinAmount) {
+        walletService.chargeCoin(loginUserId, chargeCoinAmount);
         return new ResponseEntity<>("코인이 성공적으로 충전되었습니다.", HttpStatus.CREATED);
     }
 

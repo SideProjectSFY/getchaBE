@@ -2,6 +2,7 @@ package com.ssafy.backend.bid.model;
 
 import com.ssafy.backend.common.enums.TransactionType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -46,16 +47,17 @@ public class BidInternalDto {
         private TransactionType balanceStatus;
     }
 
-    @Schema(description = "거래 내역 등록 DTO")
+    @Schema(description = "입찰 거래 내역 등록 DTO")
     @Getter
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class WalletHistoryAndUserId {
+    public static class BidWalletHistory {
 
         @Schema(name = "userId", description = "로그인한 사용자Id(pk) or 이전 최고입찰자Id(pk)")
         private Long userId;
 
+        @NotNull
         private Long goodsId;
         private TransactionType transactionType;
         private Integer amount;

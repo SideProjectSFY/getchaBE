@@ -5,20 +5,26 @@
 <mapper namespace="com.ssafy.backend.wallet.model.WalletMapper">
 
     <!-- 거래 내역 조회 -->
-    <select id="selectWalletHistory">
+    <select id="selectWalletHistory" resultType="com.ssafy.backend.wallet.model.WalletResponseDto$WalletHistoryAll">
         SELECT
             wh.id,
-            transaction_type,
             goods_id,
-            description,
+            transaction_type,
             amount,
+            description,
             wh.created_at
         FROM wallet_history wh
             INNER JOIN coin_wallet cw
                 ON cw.id = wh.wallet_id
         WHERE cw.user_id = #{loginUserId}
-        ORDER BY wh.created_at desc
-        LIMIT #{size} OFFSET #{offset};
+        <if test="walletHistory.startDate != null">
+            AND wh.created_at >= #{walletHistory.startDate}
+        </if>
+        <if test="walletHistory.endDate != null">
+            AND wh.created_at <![CDATA[<]]> DATE_ADD(#{walletHistory.endDate}, INTERVAL 1 DAY)
+        </if>
+        ORDER BY wh.created_at DESC
+        LIMIT #{walletHistory.size} OFFSET #{walletHistory.offset};
     </select>
 
     <!-- 거래 내역 총 개수 조회 -->
@@ -60,4 +66,20 @@
         SET balance = balance + #{coinAmount}
         WHERE user_id = #{loginUserId}
     </update>
+
+    <!-- 코인 충전 거래내역 등록 -->
+    <insert id="insertChargeWalletHistory" parameterType="com.ssafy.backend.wallet.model.WalletRequestDto$ChargeWalletHistory">
+        INSERT INTO wallet_history (
+            wallet_id,
+            transaction_type,
+            amount,
+            description
+        )
+        VALUES (
+            (SELECT id FROM coin_wallet WHERE user_id = #{userId}),
+            #{transactionType},
+            #{amount},
+            #{description}
+        );
+    </insert>
 </mapper>

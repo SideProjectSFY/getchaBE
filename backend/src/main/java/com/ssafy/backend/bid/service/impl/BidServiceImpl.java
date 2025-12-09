@@ -350,8 +350,8 @@ public  class BidServiceImpl implements BidService {
             );
         }
 
-        BidInternalDto.WalletHistoryAndUserId walletHistory =
-                BidInternalDto.WalletHistoryAndUserId.builder()
+        BidInternalDto.BidWalletHistory bidWalletHistory =
+                BidInternalDto.BidWalletHistory.builder()
                         .userId(userId)
                         .goodsId(goodsId)
                         .transactionType(historyType)
@@ -359,7 +359,7 @@ public  class BidServiceImpl implements BidService {
                         .description(description)
                         .build();
 
-        int historyResult = bidMapper.insertWalletHistory(walletHistory);
+        int historyResult = bidMapper.insertBidWalletHistory(bidWalletHistory);
         if (historyResult < 1) {
             throw new CustomException(
                     "지갑 거래 내역 기록에 실패하였습니다.",
