@@ -8,7 +8,6 @@ import com.ssafy.backend.goods.model.*;
 import com.ssafy.backend.goods.service.GoodsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -27,14 +26,12 @@ public class GoodsServiceImpl implements GoodsService {
     private final FileServie fileServie;
     private static final int LIMIT_AMOUNT = 5_000_000;
 
-    // 실제 서버 저장 상대경로 filePath
-    @Value("${file.upload.path}")
-    private String filePath;
+    private final String webPath = "/goodsImageFiles";
 
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void addGoods(
+    public GoodsResponseDto.AddGoodsResult addGoods(
             Long loginUserId,
             GoodsRequestDto.GoodsRegister goodsRegister,
             List<MultipartFile> imageFiles) {
@@ -68,7 +65,8 @@ public class GoodsServiceImpl implements GoodsService {
         // 3. 굿즈 등록
         int saveResult = goodsMapper.insertGoods(goods);
         // 굿즈 등록에 실패 시 에러 던지기
-        if(saveResult < 1) throw new CustomException("굿즈 글 등록에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
+        if(saveResult < 1)
+            throw new CustomException("굿즈 글 등록에 실패하였습니다", HttpStatus.INTERNAL_SERVER_ERROR);
 
         Long goodsId = goods.getId();
 
@@ -88,7 +86,7 @@ public class GoodsServiceImpl implements GoodsService {
                         .goodsId(goodsId)
                         .originFilename(file.getOriginalFilename())
                         .storedFilename(storedFilename)
-                        .filePath(filePath + "/" + storedFilename)
+                        .filePath(webPath + "/" + storedFilename)
                         .fileSize(file.getSize())
                         .sortOrder(sortOrder++)
                         .build();
@@ -98,8 +96,24 @@ public class GoodsServiceImpl implements GoodsService {
             }
         }
 
+        return GoodsResponseDto.AddGoodsResult.builder()
+                .goodsId(goodsId)
+                .build();
     }
 
+    @Override
+    public List<GoodsResponseDto.MyPageInRegisteredGoodsCard> getAllRegisteredGoods(Long loginUserId) {
+        // 데이터 조회 후, 없으면 빈 리스트 던지기
+        return Optional.ofNullable(goodsMapper.selectAllRegisteredGoods(loginUserId))
+                .orElse(Collections.emptyList());
+    }
+
+    @Override
+    public List<GoodsResponseDto.MyPageInParticipatedGoodsCard> getAllParticipatedGoods(Long loginUserId) {
+        // 데이터 조회 후, 없으면 빈 리스트 던지기
+        return Optional.ofNullable(goodsMapper.selectAllParticipatedGoods(loginUserId))
+                .orElse(Collections.emptyList());
+    }
 
 
     @Override
@@ -193,7 +207,7 @@ public class GoodsServiceImpl implements GoodsService {
         // 굿즈 데이터 수정
         int updateGoodsResult = goodsMapper.updateGoods(goodsModify, loginUserId, auctionEndAt);
         if(updateGoodsResult < 1)
-            throw new CustomException("굿즈 글 수정에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
+            throw new CustomException("굿즈 글 수정에 실패하였습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 
 
         /*
@@ -212,14 +226,14 @@ public class GoodsServiceImpl implements GoodsService {
 
             // DB 에서 파일 row 삭제
             int deleteImageFile = goodsMapper.deleteGoodsImageByFileId(deleteImageIds);
-            if(deleteImageFile < 1) throw new CustomException("이미지 삭제에 실패하였습니다.", HttpStatus.BAD_REQUEST);
+            if(deleteImageFile < 1) throw new CustomException("이미지 삭제에 실패하였습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         // 2. 유지되는 기존 이미지들의 sort_order 업데이트
         if (goodsModify.getExistingImages() != null && !goodsModify.getExistingImages().isEmpty()) {
             int updateImageSortOrder = goodsMapper.updateImageSortOrder(goodsId, goodsModify.getExistingImages());
             if(updateImageSortOrder < 1)
-                throw new CustomException("기존 이미지 순서 업데이트에 실패하였습니다.", HttpStatus.BAD_REQUEST);
+                throw new CustomException("기존 이미지 순서 업데이트에 실패하였습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
 
@@ -237,7 +251,7 @@ public class GoodsServiceImpl implements GoodsService {
                         .goodsId(goodsId)
                         .originFilename(file.getOriginalFilename())
                         .storedFilename(storedFilename)
-                        .filePath(filePath + "/" + storedFilename)
+                        .filePath(webPath + "/" + storedFilename)
                         .fileSize(file.getSize())
                         .sortOrder(nextOrder)
                         .build();
@@ -255,7 +269,7 @@ public class GoodsServiceImpl implements GoodsService {
 
         GoodsResponseDto.GoodsDetail goodsDetail = goodsMapper.selectGoodsById(goodsId, loginUserId);
         if(!Objects.equals(goodsDetail.getSellerId(), loginUserId)) {
-            throw new AccessDeniedException("작성자만 삭제할 수 있습니다.");
+            throw new AccessDeniedException("삭제 권한이 없습니다.");
         }
 
         // 상태 체크
@@ -266,7 +280,7 @@ public class GoodsServiceImpl implements GoodsService {
         if(auctionStatus != AuctionStatus.PROCEEDING) {
 
             int deleteResult = goodsMapper.deleteGoods(goodsId, loginUserId);
-            if(deleteResult < 1) throw new CustomException("굿즈 글 삭제에 실패하였습니다", HttpStatus.SERVICE_UNAVAILABLE);
+            if(deleteResult < 1) throw new CustomException("굿즈 글 삭제에 실패하였습니다", HttpStatus.INTERNAL_SERVER_ERROR);
 
         } else {
             throw new CustomException("경매 대기 또는 종료된 후에만 삭제가 가능합니다.", HttpStatus.BAD_REQUEST);

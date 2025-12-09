@@ -25,6 +25,20 @@ public interface GoodsMapper {
     void insertFiles(GoodsImage imageFile);
 
     /**
+     * 사용자가 "등록한" 굿즈 카드 목록 조회
+     * @param loginUserId 사용자ID(pk)
+     * @return 조회한 사용자 등록 굿즈 카드 목록 리스트
+     */
+    List<GoodsResponseDto.MyPageInRegisteredGoodsCard> selectAllRegisteredGoods(Long loginUserId);
+
+    /**
+     * 사용자가 "참여한" 굿즈 카드 목록 조회
+     * @param loginUserId 사용자ID(pk)
+     * @return 조회한 사용자 등록 굿즈 카드 목록 리스트
+     */
+    List<GoodsResponseDto.MyPageInParticipatedGoodsCard> selectAllParticipatedGoods(Long loginUserId);
+
+    /**
      * 굿즈 카드 목록 조회 (검색/필터)
      * @param goodsLookUp 굿즈 조회용 정보
      * @return 조회된 굿즈카드 리스트

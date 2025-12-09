@@ -12,14 +12,23 @@ import java.util.List;
 @Setter
 public class GoodsResponseDto {
 
-    /**
-     * GoodsCard : 굿즈 목록 조회 시 하나의 Goods카드 데이터
-     * */
+    @Schema(description = "굿즈 등록 시 반환할 굿즈Id")
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AddGoodsResult {
+
+        private Long goodsId;
+    }
+
+    @Schema(description = "굿즈 목록 조회 시 하나의 Goods카드 데이터")
     @Getter
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
     public static class GoodsCard {
+
         private Long goodsId;
         private Long sellerId;
         private String sellerNickname;          // 판매자닉네임
@@ -28,15 +37,15 @@ public class GoodsResponseDto {
         private String mainFilePath;            // 굿즈대표이미지
         private String title;                   // 굿즈 글의 제목
         private String animeTitle;              // 애니메이션 제목
-        private Integer currentBidAmount;           // 현재 입찰가
+        private Integer currentBidAmount;       // 현재 입찰가
+        private Integer startPrice;             // 시작가
         private AuctionStatus auctionStatus;
         private LocalDateTime auctionEndAt;
         private LocalDateTime createdAt;
     }
 
-    /**
-     * GoodsDetailAll : 굿즈 상세 조회 시 Goods 포함 다른 리스트 데이터
-     * */
+
+    @Schema(description = "굿즈 상세 조회 시 Goods 포함 다른 리스트 데이터")
     @Getter
     @Builder
     public static class GoodsDetailAll {
@@ -45,9 +54,7 @@ public class GoodsResponseDto {
         private List<BidParticipant> participants;
     }
 
-    /**
-     * GoodsDetail : 굿즈 상세 조회 시 굿즈관련데이터 위주
-     * */
+    @Schema(description = "굿즈 상세 조회 시 굿즈관련데이터 위주")
     @Getter
     @Builder
     @NoArgsConstructor
@@ -81,9 +88,7 @@ public class GoodsResponseDto {
         private boolean checkSeller;
     }
 
-    /**
-     *  GoodsDetailImage : 굿즈 상세 조회 시 굿즈이미지 데이터 위주
-     */
+    @Schema(description = "굿즈 상세 조회 시 굿즈이미지 데이터 위주")
     @Getter
     @Builder
     @NoArgsConstructor
@@ -95,6 +100,7 @@ public class GoodsResponseDto {
         private Integer sortOrder;
     }
 
+    @Schema(description = "입찰 참여자 목록 조회용 DTO")
     @Getter
     @Builder
     @NoArgsConstructor
@@ -108,5 +114,38 @@ public class GoodsResponseDto {
         private String bidderProfileFilePath;
         private Integer bidAmount;
         private boolean isHighest;
+    }
+
+
+    @Schema(description = "사용자가 등록한 굿즈 목록 조회 DTO")
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MyPageInRegisteredGoodsCard {
+        private Long goodsId;
+        private String title;                   // 굿즈 글의 제목
+        private Category category;
+        private AuctionStatus auctionStatus;
+        private String mainFilePath;            // 굿즈대표이미지
+        private String animeTitle;              // 애니메이션 제목
+        private Integer currentBidAmount;       // 현재 입찰가
+        private Integer startPrice;             // 시작가
+    }
+
+    @Schema(description = "사용자가 참여한 굿즈 목록 조회 DTO")
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MyPageInParticipatedGoodsCard {
+        private Long goodsId;
+        private String title;                   // 굿즈 글의 제목
+        private Category category;
+        private AuctionStatus auctionStatus;
+        private String mainFilePath;            // 굿즈대표이미지
+        private String animeTitle;              // 애니메이션 제목
+        private Integer currentBidAmount;       // 현재 입찰가
+        private Integer myBidAmount;            // 내가 입찰한 금액
     }
 }
