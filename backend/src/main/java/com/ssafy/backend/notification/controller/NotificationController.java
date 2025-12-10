@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.DeferredResult;
 
@@ -22,22 +23,14 @@ import java.util.List;
 public class NotificationController {
 
     private final NotificationService notificationService;
-    private final JwtTokenProvider jwtTokenProvider;
     private final LongPollingManager longPollingManager;
-
-    //Request에서 Authorization 헤더 추출
-    private Long extraUserId(HttpServletRequest request){
-        String token = jwtTokenProvider.resolveToken(request);
-        return jwtTokenProvider.getUserId(token);
-    }
 
     // 1. 읽지 않은 알림 목록 조회
     @GetMapping("")
     @Operation(summary = "읽지 않은 알림 목록 조회")
     public ResponseEntity<List<NotificationResponseDto>> getUnreadNoti(
-            HttpServletRequest request
+            @AuthenticationPrincipal Long userId
     ) {
-        Long userId = extraUserId(request);
         return ResponseEntity.ok(notificationService.getUnreadNotifications(userId));
     }
 
@@ -46,9 +39,8 @@ public class NotificationController {
     @Operation(summary = "알림 생성 (테스트)")
     public ResponseEntity<NotificationResponseDto> createNotification(
             @RequestBody NotificationRequestDto dto,
-            HttpServletRequest request
+            @AuthenticationPrincipal Long userId
     ) {
-        Long userId = extraUserId(request);
         return ResponseEntity.ok(notificationService.createNotification(userId, dto.getType(), dto.getVars(), dto.getGoodsId()));
     }
 
@@ -63,8 +55,7 @@ public class NotificationController {
     // 4. 알림 전체 읽음 처리
     @PatchMapping("/read-all")
     @Operation(summary = "알림 전체 읽음 처리")
-    public ResponseEntity<Void> markAllAsRead(HttpServletRequest request) {
-        Long userId = extraUserId(request);
+    public ResponseEntity<Void> markAllAsRead(@AuthenticationPrincipal Long userId) {
         notificationService.markAllAsRead(userId);
         return ResponseEntity.ok().build();
     }
@@ -83,10 +74,8 @@ public class NotificationController {
     )
     @GetMapping("/stream")
     public DeferredResult<ResponseEntity<List<NotificationResponseDto>>> stream(
-            HttpServletRequest request
+            @AuthenticationPrincipal Long userId
     ) {
-        Long userId = extraUserId(request);
-
         // unread 알림 있는 지 체크 !
         List<NotificationResponseDto> unread = notificationService.getUnreadNotifications(userId);
 
