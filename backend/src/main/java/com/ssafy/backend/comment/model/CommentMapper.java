@@ -24,6 +24,13 @@ public interface CommentMapper {
     int checkParentId(Long parentId);
 
     /**
+     * 작성자 일치한지 체크
+     * @param commentId 댓글Id(pk)
+     * @return 작성자 Id 반환
+     */
+    Long selectWriterIdByCommentId(Long commentId);
+
+    /**
      * 댓글 또는 대댓글 등록
      * @param comment 댓글 또는 대댓글 내용
      * @return 댓글 또는 대댓글 등록 결과 반환
@@ -36,7 +43,7 @@ public interface CommentMapper {
      * @param goodsId 굿즈ID 정보
      * @return 댓글과 대댓글 전체 조회 리스트
      */
-    List<CommentResponseDTO> selectAllCommentByGoodsId(Long loginUserId, Long goodsId);
+    List<CommentResponseDTO.CommentAll> selectAllCommentByGoodsId(Long loginUserId, Long goodsId);
 
     /**
      * 댓글 또는 대댓글 수정

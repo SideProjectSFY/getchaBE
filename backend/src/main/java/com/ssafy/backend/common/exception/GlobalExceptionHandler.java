@@ -109,7 +109,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error(HttpStatus.FORBIDDEN, "수정 또는 삭제 권한이 없습니다."));
+                .body(ApiResponse.error(HttpStatus.FORBIDDEN, e.getMessage()));
     }
 
     /**

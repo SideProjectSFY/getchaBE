@@ -4,6 +4,7 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ssafy.backend.comment.model.CommentMapper">
 
+    <!-- 굿즈 존재 여부 체크 -->
     <select id="checkGoodsId" parameterType="Long">
         SELECT count(*)
         FROM goods
@@ -11,20 +12,29 @@
           AND DELETED_AT IS NULL
     </select>
 
+    <!-- 부모 댓글 존재 여부 체크 -->
     <select id="checkParentId" parameterType="Long">
         SELECT count(*)
         FROM comment
         WHERE id = #{parentId}
     </select>
 
+    <!-- 작성자 체크 -->
+    <select id="selectWriterIdByCommentId" resultType="long">
+        SELECT writer_id
+        FROM comment
+        WHERE id = #{commentId}
+          AND deleted_at IS NULL;
+    </select>
+
     <!-- 댓글 또는 대댓글 등록 -->
-    <insert id="insertComment" parameterType="Comment">
+    <insert id="insertComment" parameterType="Comment" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO comment (goods_id, writer_id, parent_id, content)
         VALUES (#{goodsId}, #{writerId}, #{parentId}, #{content});
     </insert>
 
     <!-- 특정 굿즈의 댓글 (+ 대댓글, 계층형 구조로 나눌 예정) -->
-    <select id="selectAllCommentByGoodsId" resultType="com.ssafy.backend.comment.model.CommentResponseDTO">
+    <select id="selectAllCommentByGoodsId" resultType="com.ssafy.backend.comment.model.CommentResponseDTO$CommentAll">
         SELECT
             c.id          AS commentId,
             parent_id     AS parentId,
