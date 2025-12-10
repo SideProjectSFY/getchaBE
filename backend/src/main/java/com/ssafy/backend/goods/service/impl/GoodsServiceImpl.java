@@ -101,20 +101,6 @@ public class GoodsServiceImpl implements GoodsService {
                 .build();
     }
 
-    @Override
-    public List<GoodsResponseDto.MyPageInRegisteredGoodsCard> getAllRegisteredGoods(Long loginUserId) {
-        // 데이터 조회 후, 없으면 빈 리스트 던지기
-        return Optional.ofNullable(goodsMapper.selectAllRegisteredGoods(loginUserId))
-                .orElse(Collections.emptyList());
-    }
-
-    @Override
-    public List<GoodsResponseDto.MyPageInParticipatedGoodsCard> getAllParticipatedGoods(Long loginUserId) {
-        // 데이터 조회 후, 없으면 빈 리스트 던지기
-        return Optional.ofNullable(goodsMapper.selectAllParticipatedGoods(loginUserId))
-                .orElse(Collections.emptyList());
-    }
-
 
     @Override
     @Transactional(readOnly = true)

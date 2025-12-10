@@ -122,5 +122,12 @@ public interface GoodsMapper {
      */
     int deleteGoods(Long goodsId, Long loginUserId);
 
+    /**
+     * 진행중인 굿즈 존재 여부
+     * @param loginUserId 로그인한 사용자ID(pk)
+     * @return 존재 여부 결과 반환
+     */
+    boolean existsActiveGoodsByUserId(Long loginUserId);
+
 
 }

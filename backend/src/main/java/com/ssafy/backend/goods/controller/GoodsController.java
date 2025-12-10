@@ -57,29 +57,6 @@ public class GoodsController {
 
 
     @Operation(
-            summary = "사용자가 등록한 굿즈 목록 조회",
-            description = "로그인한 사용자가 등록한 굿즈(=경매) 목록을 조회합니다."
-    )
-    @GetMapping("/registered-list")
-    public ResponseEntity<List<GoodsResponseDto.MyPageInRegisteredGoodsCard>> getAllRegisteredGoods(
-            @AuthenticationPrincipal Long loginUserId) {
-        List<GoodsResponseDto.MyPageInRegisteredGoodsCard> allRegisteredGoods = goodsService.getAllRegisteredGoods(loginUserId);
-        return ResponseEntity.ok(allRegisteredGoods);
-    }
-
-    @Operation(
-            summary = "사용자가 참여한 굿즈 목록 조회",
-            description = "로그인한 사용자가 참여한 굿즈(=경매) 목록을 조회합니다."
-    )
-    @GetMapping("/participated-list")
-    public ResponseEntity<List<GoodsResponseDto.MyPageInParticipatedGoodsCard>> getAllParticipatedGoods(
-            @AuthenticationPrincipal Long loginUserId) {
-        List<GoodsResponseDto.MyPageInParticipatedGoodsCard> allRegisteredGoods = goodsService.getAllParticipatedGoods(loginUserId);
-        return ResponseEntity.ok(allRegisteredGoods);
-    }
-
-
-    @Operation(
             summary = "굿즈 카드 목록 조회 (검색/필터)",
             description = "굿즈 목록을 조회합니다."
     )
