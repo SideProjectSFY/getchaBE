@@ -3,9 +3,11 @@ package com.ssafy.backend.bid.service.impl;
 import com.ssafy.backend.bid.model.*;
 import com.ssafy.backend.bid.service.BidService;
 import com.ssafy.backend.common.enums.AuctionStatus;
+import com.ssafy.backend.common.enums.NotificationType;
 import com.ssafy.backend.common.enums.TransactionType;
 import com.ssafy.backend.common.exception.CustomException;
 import com.ssafy.backend.goods.model.Goods;
+import com.ssafy.backend.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
@@ -23,6 +26,7 @@ import java.util.Objects;
 public  class BidServiceImpl implements BidService {
 
     private final BidMapper bidMapper;
+    private final NotificationService notificationService;
 
     private static final int LIMIT_AMOUNT = 5_000_000;
     
@@ -60,6 +64,7 @@ public  class BidServiceImpl implements BidService {
         Integer currentBidAmount = info.getCurrentBidAmount();  // null 이면 첫 입찰
         Integer instantBuyPrice = info.getInstantBuyPrice();
         Long beforeBidderId = info.getBidderId();               // 기존 최고 입찰자
+        String title = info.getTitle();
 
         boolean isFirstBid = (bidId == null);
         boolean isInstantBuy = (instantBuyPrice != null && bidAmount >= instantBuyPrice);
@@ -114,6 +119,14 @@ public  class BidServiceImpl implements BidService {
             * 3. 기존 최고 입찰자 예치금 unlock + 지갑 내역 BIDUNLOCK 기록
             * */
             unlockBidAmount(beforeBidderId, goodsId, currentBidAmount);
+
+            // ★ 구매자(기존 최고 입찰자) 입찰 실패 알림 ★
+            notificationService.createNotification(
+                beforeBidderId,
+                    NotificationType.AUCTION_OUTBID,
+                    Map.of("itemName", title),
+                    goodsId
+            );
             
         }
 
@@ -143,8 +156,27 @@ public  class BidServiceImpl implements BidService {
         * 5. 즉시구매 분기
         * */
         if(isInstantBuy) {
+
+            // ★ 구매자(새로운 입찰자) 경매 즉시 구매 알림 ★
+            notificationService.createNotification(
+                    loginUserId,
+                    NotificationType.AUCTION_BUY_NOW,
+                    Map.of("itemName", title),
+                    goodsId
+            );
+            
+            // ★ 판매자(즉시구매가 입찰) 경매 즉시 구매 알림 ★
+            notificationService.createNotification(
+                    sellerId,
+                    NotificationType.AUCTION_BUY_NOW,
+                    Map.of("itemName", title),
+                    goodsId
+            );
+
             // 5-1. 굿즈 상태를 '낙찰' 로 변경
             updateAuctionStatusOrThrow(goodsId, AuctionStatus.COMPLETED);
+
+
 
             // 5-2. 새 입찰자의 금액을 Lock 이 아닌 실제 출금 처리 + 지갑에 "출금" 기록
             updateBalanceAndHistory(
@@ -156,6 +188,14 @@ public  class BidServiceImpl implements BidService {
                     "낙찰"
             );
 
+            // ★ 구매자(새로운 입찰자) 낙찰 알림 ★
+            notificationService.createNotification(
+                    loginUserId,
+                    NotificationType.AUCTION_WIN,
+                    Map.of("itemName", title),
+                    goodsId
+            );
+
             // 5-3. 판매자에게 입금
             updateBalanceAndHistory(
                     sellerId,
@@ -164,6 +204,14 @@ public  class BidServiceImpl implements BidService {
                     TransactionType.INCOME,      // balance + bidAmount
                     TransactionType.INCOME,
                     "입금"
+            );
+
+            // ★ 판매자(즉시구매가 낙찰) 낙찰 알림 ★
+            notificationService.createNotification(
+                    sellerId,
+                    NotificationType.AUCTION_WIN,
+                    Map.of("itemName", title),
+                    goodsId
             );
 
             // 즉시구매면 여기서 끝 (Lock 처리 안 함)
@@ -183,6 +231,21 @@ public  class BidServiceImpl implements BidService {
                 "입찰"
         );
 
+        // ★ 구매자(새로운 입찰자) 입찰 성공 알림 ★
+        notificationService.createNotification(
+                loginUserId,
+                NotificationType.AUCTION_BID_SUCCESS_BUYER,
+                Map.of("itemName", title),
+                goodsId
+        );
+
+        // ★ 판매자(새로운 입찰자발생) 입찰 성공 알림 ★
+        notificationService.createNotification(
+                sellerId,
+                NotificationType.AUCTION_BID_SUCCESS_SELLER,
+                Map.of("itemName", title),
+                goodsId
+        );
 
     }
 
@@ -233,8 +296,10 @@ public  class BidServiceImpl implements BidService {
                 continue;
             }
 
+
             Long highestBidderId = highestBid.getBidderId();
             Integer highestBidAmount = highestBid.getCurrentBidAmount();
+            String title = highestBid.getTitle();
 
             // 2. 최고 입찰자 Lock → 실제 결제  + 지갑에 '낙찰' 기록
             updateBalanceAndHistory(
@@ -246,6 +311,14 @@ public  class BidServiceImpl implements BidService {
                     "경매 종료 자동 낙찰"
                     );
 
+            // ★ 구매자(최고 입찰자) 낙찰 알림 ★
+            notificationService.createNotification(
+                    highestBidderId,
+                    NotificationType.AUCTION_WIN,
+                    Map.of("itemName", title),
+                    goodsId
+            );
+
             // 3. 판매자에게 입금 + 지갑에 '입금' 기록
             updateBalanceAndHistory(
                     sellerId,
@@ -256,9 +329,18 @@ public  class BidServiceImpl implements BidService {
                     "경매 종료 자동 입금"
             );
 
+            // ★ 판매자(즉시구매가 낙찰) 낙찰 알림 ★
+            notificationService.createNotification(
+                    sellerId,
+                    NotificationType.AUCTION_WIN,
+                    Map.of("itemName", title),
+                    goodsId
+            );
+
 
             // 5. 경매상태 '낙찰' 로 변경
             updateAuctionStatusOrThrow(goodsId, AuctionStatus.COMPLETED);
+
 
         }
 

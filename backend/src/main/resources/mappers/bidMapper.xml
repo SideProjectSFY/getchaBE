@@ -8,6 +8,7 @@
     <select id="selectGoodsPriceAndBidInfoByGoodsId" parameterType="Long" resultType="com.ssafy.backend.bid.model.BidInternalDto$GoodsPriceBidInfo">
         SELECT
             g.seller_id,
+            g.title,
             g.start_price,
             g.instant_buy_price,
             b.id AS bidId,

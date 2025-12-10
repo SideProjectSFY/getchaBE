@@ -24,6 +24,7 @@ public class BidInternalDto {
     public static class GoodsPriceBidInfo {
 
         private Long sellerId;
+        private String title;
         private Integer startPrice;
         private Integer instantBuyPrice;
         private Long bidId;

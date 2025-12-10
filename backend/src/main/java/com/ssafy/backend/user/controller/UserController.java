@@ -1,6 +1,5 @@
 package com.ssafy.backend.user.controller;
 
-import com.ssafy.backend.common.ApiResponse;
 import com.ssafy.backend.user.model.UserRequestDto;
 import com.ssafy.backend.user.model.UserResponseDto;
 import com.ssafy.backend.user.service.UserService;
