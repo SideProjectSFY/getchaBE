@@ -38,5 +38,62 @@
             AND read_at IS NULL
     </update>
 
+    <!-- 시작된 경매 조회 -->
+    <select id="findStartedAuctions" resultType="map">
+        SELECT
+            g.id AS goodsId,
+            g.seller_id AS sellerId,
+            g.title AS itemName
+        FROM goods g
+        WHERE g.auction_status = 'PROCEEDING'
+          AND g.created_at &lt;= NOW()
+          AND NOT EXISTS (
+              SELECT 1
+              FROM notification n
+              WHERE n.type = 'AUCTION_STARTED'
+                AND n.link = CONCAT('/goods?goodsId=', g.id)
+          )
+    </select>
+
+    <!-- 종료된 경매 조회 -->
+    <select id="findClosedAuctions" resultType="map">
+        SELECT
+            g.id AS goodsId,
+            g.seller_id AS sellerId,
+            g.title AS itemName
+        FROM goods g
+        WHERE g.auction_status IN ('COMPLETED', 'STOPPED')
+          AND NOT EXISTS (
+              SELECT 1
+              FROM notification n
+              WHERE n.type = 'AUCTION_CLOSED'
+                AND n.link = CONCAT('/goods?goodsId=', g.id)
+          )
+    </select>
+
+    <!-- 5분 안에 종료 될 경매 조회 -->
+    <select id="findEndingInFiveMinutes" resultType="map">
+        SELECT
+            g.id AS goodsId,
+            g.seller_id AS sellerId,
+            g.title AS itemName
+        FROM goods g
+        WHERE g.auction_status = 'PROCEEDING'
+          AND g.auction_end_at &gt; NOW()
+          AND g.auction_end_at &lt;= DATE_ADD(NOW(), INTERVAL 5 MINUTE)
+          AND NOT EXISTS (
+              SELECT 1
+              FROM notification n
+              WHERE n.type = 'AUCTION_ENDING_SOON'
+                AND n.link = CONCAT('/goods?goodsId=', g.id)
+          )
+    </select>
+
+    <!-- 경매의 입찰자 목록 -->
+    <select id="findBiddersByGoodsId" parameterType="long" resultType="long">
+        SELECT DISTINCT bidder_id
+        FROM bid
+        WHERE goods_id = #{goodsId}
+    </select>
 </mapper>
 

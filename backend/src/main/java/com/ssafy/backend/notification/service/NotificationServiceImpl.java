@@ -5,6 +5,7 @@ import com.ssafy.backend.notification.model.Notification;
 import com.ssafy.backend.notification.model.NotificationMapper;
 import com.ssafy.backend.notification.model.NotificationResponseDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -88,5 +89,76 @@ public class NotificationServiceImpl implements NotificationService {
             return null;
         }
         return type.getLinkTemplate().replace("{goodsId}", goodsId.toString());
+    }
+
+
+    /* ================================
+     *  SCHEDULER
+     * ================================
+     *
+     * 1분마다 아래 3가지 자동 감지:
+     * - AUCTION_STARTED (경매 시작)
+     * - AUCTION_ENDING_SOON (종료 5분 전)
+     * - AUCTION_CLOSED (경매 종료)
+     *
+     */
+
+    @Scheduled(fixedRate = 60_000L) // 1분마다
+    public void autoActionNotification() {
+        handleStarted();
+        handleEndingSoon();
+        handleClosed();
+    }
+
+    //공통 알림 처리
+    private void processRows(List<Map<String, Object>> rows, NotificationType type){
+        for(Map<String, Object> row : rows){
+            Long goodsId = ((Number) row.get("goodsId")).longValue();
+            Long sellerId = ((Number) row.get("sellerId")).longValue();
+            String itemName = (String) row.get("itemName");
+
+            // 판매자 알림
+            createNotification(
+                    sellerId,
+                    type,
+                    Map.of("itemName", itemName),
+                    goodsId
+            );
+
+            // 입찰자 알림
+            List<Long> bidderIds = notificationMapper.findBiddersByGoodsId(goodsId);
+            for (Long bidderId : bidderIds) {
+                createNotification(
+                        bidderId,
+                        type,
+                        Map.of("itemName", itemName),
+                        goodsId
+                );
+            }
+        }
+    }
+
+    // 경매 시작
+    private void handleStarted(){
+        processRows(
+                notificationMapper.findStartedAuctions(),
+                NotificationType.AUCTION_STARTED
+        );
+    }
+
+    // 경매 종료
+    private void handleClosed(){
+        processRows(
+                notificationMapper.findClosedAuctions(),
+                NotificationType.AUCTION_CLOSED
+        );
+    }
+
+    // 경매 종료 5분전
+    private void handleEndingSoon(){
+        processRows(
+                notificationMapper.findEndingInFiveMinutes(),
+                NotificationType.AUCTION_ENDING_SOON
+        );
     }
 }

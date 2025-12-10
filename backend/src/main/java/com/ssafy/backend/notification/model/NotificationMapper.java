@@ -1,10 +1,10 @@
 package com.ssafy.backend.notification.model;
 
-import com.ssafy.backend.common.enums.NotificationType;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface NotificationMapper {
@@ -19,4 +19,17 @@ public interface NotificationMapper {
 
     //4. 알림 전체 읽음 처리
     void markAllAsRead(@Param("userId") Long userId);
+
+    // 알림 감지 !!
+    // 최초 입찰 발생한 경매 조회
+    List<Map<String, Object>> findStartedAuctions();
+
+    //종료된 경매 조회
+    List<Map<String, Object>> findClosedAuctions();
+
+    // 5분 안에 종료 될 경매 조회
+    List<Map<String, Object>> findEndingInFiveMinutes();
+
+    // 경매의 입찰자 목록
+    List<Long> findBiddersByGoodsId(@Param("goodsId") Long goodsId);
 }
