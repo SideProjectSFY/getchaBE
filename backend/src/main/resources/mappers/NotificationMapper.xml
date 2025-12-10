@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.backend.notification.model.NotificationMapper">
+    <!-- 1. 읽지 않은 알림 목록 조회 -->
+    <select id="findUnreadByUserId" parameterType="long" resultType="com.ssafy.backend.notification.model.Notification">
+        SELECT *
+        FROM notification
+        WHERE user_id = #{userId}
+            AND read_at IS NULL
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 2. 알림 insert -->
+    <insert id="insertNotification"
+            parameterType="com.ssafy.backend.notification.model.Notification"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="id">
+        INSERT INTO notification(user_id, type, message, created_at, read_at, link)
+        VALUES (#{userId}, #{type}, #{message}, #{createdAt}, #{readAt}, #{link})
+    </insert>
+    
+    <!-- 3. 알림 단 건 읽음 처리 -->
+    <update id="markAsRead" parameterType="long">
+        UPDATE notification
+        SET read_at = NOW()
+        WHERE id = #{notificationId}
+    </update>
+    
+    <!-- 4. 알림 전체 읽음 처리 -->
+    <update id="markAllAsRead" parameterType="long">
+        UPDATE notification
+        SET read_at = NOW()
+        WHERE user_id = #{userId}
+            AND read_at IS NULL
+    </update>
+
+    <!-- 시작된 경매 조회 -->
+    <select id="findStartedAuctions" resultType="map">
+        SELECT
+            g.id AS goodsId,
+            g.seller_id AS sellerId,
+            g.title AS itemName
+        FROM goods g
+        WHERE g.auction_status = 'PROCEEDING'
+          AND g.created_at &lt;= NOW()
+          AND NOT EXISTS (
+              SELECT 1
+              FROM notification n
+              WHERE n.type = 'AUCTION_STARTED'
+                AND n.link = CONCAT('/goods?goodsId=', g.id)
+          )
+    </select>
+
+    <!-- 종료된 경매 조회 -->
+    <select id="findClosedAuctions" resultType="map">
+        SELECT
+            g.id AS goodsId,
+            g.seller_id AS sellerId,
+            g.title AS itemName
+        FROM goods g
+        WHERE g.auction_status IN ('COMPLETED', 'STOPPED')
+          AND NOT EXISTS (
+              SELECT 1
+              FROM notification n
+              WHERE n.type = 'AUCTION_CLOSED'
+                AND n.link = CONCAT('/goods?goodsId=', g.id)
+          )
+    </select>
+
+    <!-- 5분 안에 종료 될 경매 조회 -->
+    <select id="findEndingInFiveMinutes" resultType="map">
+        SELECT
+            g.id AS goodsId,
+            g.seller_id AS sellerId,
+            g.title AS itemName
+        FROM goods g
+        WHERE g.auction_status = 'PROCEEDING'
+          AND g.auction_end_at &gt; NOW()
+          AND g.auction_end_at &lt;= DATE_ADD(NOW(), INTERVAL 5 MINUTE)
+          AND NOT EXISTS (
+              SELECT 1
+              FROM notification n
+              WHERE n.type = 'AUCTION_ENDING_SOON'
+                AND n.link = CONCAT('/goods?goodsId=', g.id)
+          )
+    </select>
+
+    <!-- 경매의 입찰자 목록 -->
+    <select id="findBiddersByGoodsId" parameterType="long" resultType="long">
+        SELECT DISTINCT bidder_id
+        FROM bid
+        WHERE goods_id = #{goodsId}
+    </select>
+</mapper>
+
