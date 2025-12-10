@@ -64,7 +64,7 @@ CREATE TABLE `notification` (
                                 `user_id`	BIGINT	NOT NULL,
                                 `type`	VARCHAR(50)	NOT NULL,
                                 `message`	VARCHAR(300)	NOT NULL,
-                                `read_at`	TIMESTAMP	NOT NULL,
+                                `read_at`	TIMESTAMP	NULL,
                                 `created_at`	TIMESTAMP	NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                 `link`	VARCHAR(300)	NULL,
                                 CONSTRAINT `PK_NOTIFICATION` PRIMARY KEY (`id`)
@@ -88,7 +88,7 @@ CREATE TABLE `user` (
                         `name`	VARCHAR(30)	NULL,
                         `nickname`	VARCHAR(50)	NULL,
                         `email`	VARCHAR(30)	NULL,
-                        `password`	VARCHAR(20)	NULL,
+                        `password`	VARCHAR(300)	NULL,
                         `is_auth`	BOOLEAN	NULL,
                         `created_at`	TIMESTAMP	NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         `updated_at`	TIMESTAMP	NULL,
