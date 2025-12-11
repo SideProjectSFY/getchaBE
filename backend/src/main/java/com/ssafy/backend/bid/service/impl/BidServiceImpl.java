@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,7 +76,7 @@ public  class BidServiceImpl implements BidService {
 
         // 0-1. 판매자 입찰 제한
         if (Objects.equals(sellerId, loginUserId)) {
-            throw new CustomException("판매자는 자신의 굿즈에 입찰할 수 없습니다.", HttpStatus.FORBIDDEN);
+            throw new AccessDeniedException("판매자는 자신의 굿즈에 입찰할 수 없습니다.");
         }
 
         // 0-2. 현재 최고 입찰자는 재입찰 불가
@@ -113,7 +114,7 @@ public  class BidServiceImpl implements BidService {
             * */
 
             int updateIsHighestResult = bidMapper.updateIsHighestByGoodsId(goodsId);
-            if(updateIsHighestResult < 1) throw new CustomException("현재 최고가 여부 업데이트에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
+            if(updateIsHighestResult < 1) throw new CustomException("현재 최고가 여부 업데이트에 실패하였습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 
             /*
             * 3. 기존 최고 입찰자 예치금 unlock + 지갑 내역 BIDUNLOCK 기록
@@ -147,7 +148,7 @@ public  class BidServiceImpl implements BidService {
 
         int insertCurrentBidAmountResult = bidMapper.insertCurrentBidAmount(bid);
         if(insertCurrentBidAmountResult < 1)
-            throw new CustomException("입찰금액 등록에 실패하였습니다.", HttpStatus.SERVICE_UNAVAILABLE);
+            throw new CustomException("입찰금액 등록에 실패하였습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 
         /*
         * <즉시 구매가 이상인 경우>
@@ -375,7 +376,7 @@ public  class BidServiceImpl implements BidService {
         if (result < 1) {
             throw new CustomException(
                     "경매 상태 업데이트에 실패하였습니다.",
-                    HttpStatus.SERVICE_UNAVAILABLE
+                    HttpStatus.INTERNAL_SERVER_ERROR
             );
         }
     }
@@ -428,7 +429,7 @@ public  class BidServiceImpl implements BidService {
         if (balanceResult < 1) {
             throw new CustomException(
                     "가상화폐지갑 잔액/예치금 업데이트에 실패하였습니다.",
-                    HttpStatus.SERVICE_UNAVAILABLE
+                    HttpStatus.INTERNAL_SERVER_ERROR
             );
         }
 
@@ -445,7 +446,7 @@ public  class BidServiceImpl implements BidService {
         if (historyResult < 1) {
             throw new CustomException(
                     "지갑 거래 내역 기록에 실패하였습니다.",
-                    HttpStatus.SERVICE_UNAVAILABLE
+                    HttpStatus.INTERNAL_SERVER_ERROR
             );
         }
     }

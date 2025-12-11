@@ -99,7 +99,7 @@ public class CommentServiceImpl implements CommentService {
 
         Long writerId = commentMapper.selectWriterIdByCommentId(commentModify.getCommentId());
 
-        if(writerId == null) throw new CustomException("존재하지 않는 댓글입니다.", HttpStatus.BAD_REQUEST);
+        if(writerId == null) throw new NoSuchElementException("존재하지 않는 댓글입니다.");
 
         // 작성권한체크
         if(!Objects.equals(writerId, loginUserId)) {
@@ -117,7 +117,7 @@ public class CommentServiceImpl implements CommentService {
 
         Long writerId = commentMapper.selectWriterIdByCommentId(commentId);
 
-        if(writerId == null) throw new CustomException("존재하지 않는 댓글입니다.", HttpStatus.BAD_REQUEST);
+        if(writerId == null) throw new NoSuchElementException("존재하지 않는 댓글입니다.");
 
         // 작성권한체크
         if(!Objects.equals(writerId, loginUserId)) {
