@@ -18,6 +18,6 @@ public class PageResponse<T> {
     private List<T> items;      // 조회된 데이터 목록
     private int currentPage;    // 현재 페이지 번호
     private int totalPages;     // 전체 페이지 수
-    private long totalItems;    // 전체 데이터 개수
+    private long totalCount;    // 전체 데이터 개수
 
 }

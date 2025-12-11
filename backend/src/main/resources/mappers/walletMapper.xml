@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.backend.wallet.model.WalletMapper">
+
+    <!-- 거래 내역 조회 -->
+    <select id="selectWalletHistory" resultType="com.ssafy.backend.wallet.model.WalletResponseDto$WalletHistoryAll">
+        SELECT
+            wh.id,
+            goods_id,
+            transaction_type,
+            amount,
+            description,
+            wh.created_at
+        FROM wallet_history wh
+            INNER JOIN coin_wallet cw
+                ON cw.id = wh.wallet_id
+        WHERE cw.user_id = #{loginUserId}
+        <if test="walletHistory.startDate != null">
+            AND wh.created_at >= #{walletHistory.startDate}
+        </if>
+        <if test="walletHistory.endDate != null">
+            AND wh.created_at <![CDATA[<]]> DATE_ADD(#{walletHistory.endDate}, INTERVAL 1 DAY)
+        </if>
+        ORDER BY wh.created_at DESC
+        LIMIT #{walletHistory.size} OFFSET #{walletHistory.offset};
+    </select>
+
+    <!-- 거래 내역 총 개수 조회 -->
+    <select id="countWalletHistory">
+        SELECT
+            count(*)
+        FROM wallet_history wh
+            INNER JOIN coin_wallet cw
+                ON cw.id = wh.wallet_id
+        WHERE cw.user_id = #{loginUserId}
+    </select>
+
+    <!-- 자산 현황 조회 -->
+    <select id="selectCoinWallet">
+        SELECT
+            balance,
+            locked_balance
+        FROM coin_wallet
+        WHERE user_id = #{loginUserId}
+    </select>
+
+    <!-- 지갑 생성 -->
+    <insert id="createCoinWallet">
+    INSERT INTO coin_wallet (
+        user_id,
+        balance,
+        locked_balance
+    )
+    VALUES (
+        #{loginUserId},
+        0,
+        0
+    )
+    </insert>
+
+    <!-- 코인 충전(임시) -->
+    <update id="chargeCoin">
+        UPDATE coin_wallet
+        SET balance = balance + #{coinAmount}
+        WHERE user_id = #{loginUserId}
+    </update>
+
+    <!-- 코인 충전 거래내역 등록 -->
+    <insert id="insertChargeWalletHistory" parameterType="com.ssafy.backend.wallet.model.WalletRequestDto$ChargeWalletHistory">
+        INSERT INTO wallet_history (
+            wallet_id,
+            transaction_type,
+            amount,
+            description
+        )
+        VALUES (
+            (SELECT id FROM coin_wallet WHERE user_id = #{userId}),
+            #{transactionType},
+            #{amount},
+            #{description}
+        );
+    </insert>
+
+    <select id="existsWalletByUserId" parameterType="long" resultType="boolean">
+        SELECT
+            CASE
+                WHEN COUNT(*) > 0 THEN TRUE
+                ELSE FALSE
+            END
+        FROM coin_wallet
+        WHERE user_id = #{loginUserId}
+    </select>
+
+</mapper>

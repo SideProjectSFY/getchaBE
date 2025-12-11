@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.backend.comment.model.CommentMapper">
+
+    <!-- 굿즈 존재 여부 체크 -->
+    <select id="checkGoodsId" parameterType="Long">
+        SELECT count(*)
+        FROM goods
+        WHERE id = #{goodsId}
+          AND DELETED_AT IS NULL
+    </select>
+
+    <!-- 부모 댓글 존재 여부 체크 -->
+    <select id="checkParentId" parameterType="Long">
+        SELECT count(*)
+        FROM comment
+        WHERE id = #{parentId}
+    </select>
+
+    <!-- 작성자 체크 -->
+    <select id="selectWriterIdByCommentId" resultType="long">
+        SELECT writer_id
+        FROM comment
+        WHERE id = #{commentId}
+          AND deleted_at IS NULL;
+    </select>
+
+    <!-- 댓글 또는 대댓글 등록 -->
+    <insert id="insertComment" parameterType="Comment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO comment (goods_id, writer_id, parent_id, content)
+        VALUES (#{goodsId}, #{writerId}, #{parentId}, #{content});
+    </insert>
+
+    <!-- 특정 굿즈의 댓글 (+ 대댓글, 계층형 구조로 나눌 예정) -->
+    <select id="selectAllCommentByGoodsId" resultType="com.ssafy.backend.comment.model.CommentResponseDTO$CommentAll">
+        SELECT
+            c.id          AS commentId,
+            parent_id     AS parentId,
+            goods_id      AS goodsId,
+            writer_id     AS writerId,
+            (writer_id = #{loginUserId}) AS checkWriter,
+            u.nickname    AS writerNickName,
+            ta.poster_url AS writerProfileFilePath,
+            content,
+            c.created_at  AS createdAt
+        FROM comment c
+            INNER JOIN user u
+                ON c.writer_id = u.id
+            LEFT JOIN tmdb_anime ta
+                ON ta.id = u.liked_anime_id1
+        WHERE goods_id = #{goodsId}
+        ORDER BY createdAt DESC
+    </select>
+
+    <!-- 댓글 수정하기 -->
+    <update id="updateComment" parameterType="com.ssafy.backend.comment.model.CommentRequestDTO$CommentModify">
+        UPDATE comment
+        SET content = #{commentModify.content},
+            updated_at = NOW()
+        WHERE id = #{commentModify.commentId}
+          AND writer_id = #{loginUserId}
+          AND deleted_at IS NULL;
+    </update>
+
+    <!-- 자식 댓글의 개수 조회 -->
+    <select id="countChildCommentByParentId" parameterType="Long">
+        SELECT count(*)
+        FROM comment
+        WHERE parent_id = #{parentId}
+    </select>
+
+    <!-- 대댓글의 부모ID와 soft delete 여부 조회 -->
+    <select id="selectParentIdAndDeletedAtByCommentId" parameterType="Long" resultType="java.util.Map">
+        SELECT
+            c.parent_id,
+            c2.deleted_at
+        FROM comment c
+            LEFT JOIN comment c2
+                ON c.parent_id = c2.id
+        WHERE c.id = #{commentId}
+          AND c.parent_id IS NOT NULL
+    </select>
+
+    <!-- soft delete 처리 -->
+    <update id="softDeleteComment" parameterType="java.util.Map">
+        UPDATE comment
+        SET deleted_at = now(),
+            content = '(삭제된 댓글입니다.)'
+        WHERE id = #{commentId}
+         AND writer_id = #{loginUserId}
+    </update>
+
+    <!-- hard delete 처리 -->
+    <delete id="hardDeleteComment" parameterType="java.util.Map">
+        DELETE FROM comment
+        WHERE id = #{commentId}
+          AND writer_id = #{loginUserId}
+    </delete>
+</mapper>

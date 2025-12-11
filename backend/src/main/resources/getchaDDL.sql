@@ -106,6 +106,7 @@ CREATE TABLE `comment` (
                            `content`	TEXT	NULL,
                            `created_at`	TIMESTAMP	NOT NULL DEFAULT CURRENT_TIMESTAMP,
                            `updated_at`	TIMESTAMP	NULL,
+                           `deleted_at`	TIMESTAMP	NULL comment 'soft 삭제',
                            CONSTRAINT `PK_COMMENT` PRIMARY KEY (`id`)
 );
 
@@ -114,13 +115,14 @@ CREATE TABLE `coin_wallet` (
                                `user_id`	BIGINT	NOT NULL,
                                `balance`	INT	NOT NULL	COMMENT '예치금이 뺀 잔액',
                                `locked_balance`	INT	NULL	COMMENT '예치금 총액(다수경매)',
-                               CONSTRAINT `PK_COIN_WALLET` PRIMARY KEY (`id`)
+                               CONSTRAINT `PK_COIN_WALLET` PRIMARY KEY (`id`),
+                               CONSTRAINT UQ_COIN_WALLET_USER UNIQUE (user_id)
 );
 
 CREATE TABLE `wallet_history` (
                                   `id`	BIGINT	NOT NULL AUTO_INCREMENT,
                                   `wallet_id`	BIGINT	NOT NULL,
-                                  `goods_id`	BIGINT	NOT NULL,
+                                  `goods_id`	BIGINT	NULL,
                                   `transaction_type`	ENUM('CHARGE', 'BIDLOCK', 'BIDUNLOCK', 'INCOME', 'EXPENSE')	NOT NULL	COMMENT 'DDL 에서 ENUM 제약 걸기',
                                   `amount`	INT	NOT NULL,
                                   `description` TEXT	NULL,

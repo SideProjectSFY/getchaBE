@@ -23,10 +23,11 @@ public interface UserMapper {
     /**
      * 프로팔 수정
      */
-    void updateUser(User user);
+    int updateUser(User user);
 
     /**
      * 회원 탈퇴
      */
-    void deleteUser(@Param("userId") Long userId);
+    int deleteUser(@Param("userId") Long userId);
+
 }
