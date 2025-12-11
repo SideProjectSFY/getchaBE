@@ -49,7 +49,7 @@ public class GoodsController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GoodsResponseDto.AddGoodsResult> postGoods(
             @AuthenticationPrincipal Long loginUserId,
-            @Valid @RequestPart("goodRegister") GoodsRequestDto.GoodsRegister goodsRegister,
+            @Valid @RequestPart("goodsRegister") GoodsRequestDto.GoodsRegister goodsRegister,
             @RequestPart(value = "imageFiles", required = false) List<MultipartFile> imageFiles) {
         GoodsResponseDto.AddGoodsResult addGoods = goodsService.addGoods(loginUserId, goodsRegister, imageFiles);
         return ResponseEntity.ok(addGoods);

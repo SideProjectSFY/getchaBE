@@ -46,7 +46,7 @@ public class GoodsServiceImpl implements GoodsService {
         Integer startPrice = goodsRegister.getStartPrice();
         Integer instantBuyPrice = goodsRegister.getInstantBuyPrice();
         if(instantBuyPrice != null &&
-                instantBuyPrice < startPrice && instantBuyPrice > LIMIT_AMOUNT)
+                (instantBuyPrice < startPrice || instantBuyPrice > LIMIT_AMOUNT))
             throw new CustomException("즉시구매가는 시작가 이상 500만원 이하여야 합니다.", HttpStatus.BAD_REQUEST);
 
         Goods goods = Goods.builder()
@@ -176,7 +176,7 @@ public class GoodsServiceImpl implements GoodsService {
         // 금액 검증
         Integer instantBuyPrice = goodsModify.getInstantBuyPrice();
         if(instantBuyPrice != null &&
-                instantBuyPrice < goodsModify.getStartPrice() && instantBuyPrice > LIMIT_AMOUNT)
+                (instantBuyPrice < goodsModify.getStartPrice() || instantBuyPrice > LIMIT_AMOUNT))
             throw new CustomException("즉시구매가는 시작가 이상 500만원 이하여야 합니다.", HttpStatus.BAD_REQUEST);
 
         // 경매 대기 상태 검증
