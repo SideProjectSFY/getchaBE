@@ -6,6 +6,8 @@ import com.ssafy.backend.common.exception.CustomException;
 import com.ssafy.backend.common.service.FileServie;
 import com.ssafy.backend.goods.model.*;
 import com.ssafy.backend.goods.service.GoodsService;
+import com.ssafy.backend.wish.model.WishMapper;
+import com.ssafy.backend.wish.model.WishResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,7 @@ import java.util.*;
 public class GoodsServiceImpl implements GoodsService {
 
     private final GoodsMapper goodsMapper;
+    private final WishMapper wishMapper;
     private final FileServie fileServie;
     private static final int LIMIT_AMOUNT = 5_000_000;
 
@@ -271,6 +274,13 @@ public class GoodsServiceImpl implements GoodsService {
         } else {
             throw new CustomException("경매 대기 또는 종료된 후에만 삭제가 가능합니다.", HttpStatus.BAD_REQUEST);
         }
+    }
+
+    @Override
+    public List<WishResponseDto.TopGoodsCard> getTop6GoodsOnWishCount() {
+        // 데이터 조회 후, 없으면 빈 리스트 던지기
+        return Optional.ofNullable(wishMapper.selectTop6GoodsOnWishCount())
+                .orElse(Collections.emptyList());
     }
 
 }

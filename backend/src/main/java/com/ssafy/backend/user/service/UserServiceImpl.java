@@ -5,6 +5,8 @@ import com.ssafy.backend.goods.model.GoodsMapper;
 import com.ssafy.backend.goods.model.GoodsResponseDto;
 import com.ssafy.backend.user.model.*;
 import com.ssafy.backend.wallet.model.WalletMapper;
+import com.ssafy.backend.wish.model.WishMapper;
+import com.ssafy.backend.wish.model.WishResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final GoodsMapper goodsMapper;
     private final WalletMapper walletMapper;
+    private final WishMapper wishMapper;
 
     /**
      * 내 프로필 조회
@@ -103,7 +106,7 @@ public class UserServiceImpl implements UserService {
     public void deleteMyAccount(Long userId) {
 
         // 1. 등록한 굿즈가 있을 경우
-        boolean existGoodsResult = goodsMapper.existsActiveGoodsByUserId(userId);
+        boolean existGoodsResult = goodsMapper.existsActiveGoodsByUserId(userId, null);
         //1-1. 'PROCEEDING'(진행중) 인 경우 삭제 불가
         if(existGoodsResult) {
             throw new CustomException("진행 중인 경매가 있어 회원 탈퇴를 할 수 없습니다.", HttpStatus.BAD_REQUEST);
@@ -138,6 +141,16 @@ public class UserServiceImpl implements UserService {
     public List<GoodsResponseDto.MyPageInParticipatedGoodsCard> getAllParticipatedGoods(Long loginUserId) {
         // 데이터 조회 후, 없으면 빈 리스트 던지기
         return Optional.ofNullable(goodsMapper.selectAllParticipatedGoods(loginUserId))
+                .orElse(Collections.emptyList());
+    }
+
+    /**
+    * 마이페이지 내 사용자가 찜한 굿즈 목록 조회
+    * */
+    @Override
+    public List<WishResponseDto.WishedGoodsAll> getAllWishedGoods(Long loginUserId) {
+        // 데이터 조회 후, 없으면 빈 리스트 던지기
+        return Optional.ofNullable(wishMapper.selectAllWishedGoods(loginUserId))
                 .orElse(Collections.emptyList());
     }
 }
