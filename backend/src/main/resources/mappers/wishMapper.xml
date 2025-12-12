@@ -42,6 +42,7 @@
             LEFT JOIN tmdb_anime ta
                 ON ta.id = g.anime_id
         WHERE w.user_id = #{loginUserId}
+          AND g.deleted_at IS NULL
         ORDER BY w.created_at DESC
     </select>
 
