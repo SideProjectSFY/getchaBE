@@ -4,6 +4,7 @@ import com.ssafy.backend.common.PageResponse;
 import com.ssafy.backend.goods.model.GoodsRequestDto;
 import com.ssafy.backend.goods.model.GoodsResponseDto;
 import com.ssafy.backend.goods.service.GoodsService;
+import com.ssafy.backend.wish.model.WishResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -40,9 +41,11 @@ public class GoodsController {
             summary = "굿즈 등록",
             description = "새로운 굿즈 정보를 등록합니다.")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "굿즈가 성공적으로 등록되었습니다."),
-            @ApiResponse(responseCode = "400", description = "굿즈 이미지파일 업로드에 실패하였습니다."),
-            @ApiResponse(responseCode = "500", description = "굿즈 등록에 실패하였습니다.")
+            @ApiResponse(responseCode = "201"),
+            @ApiResponse(responseCode = "400", description = "즉시구매가는 시작가 이상 500만원 이하여야 합니다." +
+                    "or 굿즈 이미지파일 업로드에 실패하였습니다."),
+            @ApiResponse(responseCode = "500", description = "굿즈 등록에 실패하였습니다." +
+                    "or 파일 업로드에 실패하였습니다.")
     })
     @RequestBody(content = @Content(
             encoding = @Encoding(name = "goodsRegister", contentType = MediaType.APPLICATION_JSON_VALUE)))
@@ -51,8 +54,11 @@ public class GoodsController {
             @AuthenticationPrincipal Long loginUserId,
             @Valid @RequestPart("goodsRegister") GoodsRequestDto.GoodsRegister goodsRegister,
             @RequestPart(value = "imageFiles", required = false) List<MultipartFile> imageFiles) {
+
         GoodsResponseDto.AddGoodsResult addGoods = goodsService.addGoods(loginUserId, goodsRegister, imageFiles);
-        return ResponseEntity.ok(addGoods);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(addGoods);
     }
 
 
@@ -62,6 +68,7 @@ public class GoodsController {
     )
     @GetMapping("/list")
     public ResponseEntity<PageResponse<GoodsResponseDto.GoodsCard>> getAllGoods(@Valid @ModelAttribute GoodsRequestDto.GoodsLookUp goodsLookUp) {
+
         PageResponse<GoodsResponseDto.GoodsCard> allGoods = goodsService.getAllGoods(goodsLookUp);
         return ResponseEntity.ok(allGoods);
     }
@@ -72,7 +79,7 @@ public class GoodsController {
             description = "굿즈 글을 상세 조회합니다."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "굿즈가 성공적으로 조회되었습니다."),
+            @ApiResponse(responseCode = "200"),
             @ApiResponse(responseCode = "404", description = "존재하지 않는 굿즈입니다."),
     })
     @Parameter(name = "goodsId", description = "굿즈ID(pk)", required = true)
@@ -80,6 +87,7 @@ public class GoodsController {
     public ResponseEntity<GoodsResponseDto.GoodsDetailAll> getGoodsById(
             @AuthenticationPrincipal Long loginUserId,
             @NotNull @RequestParam Long goodsId) {
+
         GoodsResponseDto.GoodsDetailAll goodsDetailAll = goodsService.getGoodsById(loginUserId, goodsId);
         return ResponseEntity.ok(goodsDetailAll);
     }
@@ -89,11 +97,15 @@ public class GoodsController {
             description = "굿즈 글의 정보를 수정합니다."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "굿즈가 성공적으로 수정되었습니다."),
+            @ApiResponse(responseCode = "200"),
             @ApiResponse(responseCode = "400", description = "즉시구매가는 시작가 이상 500만원 이하여야 합니다." +
                     "or 경매 상태가 대기일 경우에만 수정이 가능합니다."),
             @ApiResponse(responseCode = "403", description = "수정 권한이 없습니다."),
-            @ApiResponse(responseCode = "500", description = "굿즈 글 수정에 실패하였습니다."),
+            @ApiResponse(responseCode = "500", description = "굿즈 글 수정에 실패하였습니다." +
+                    "or 이미지 삭제에 실패하였습니다." +
+                    "or 파일 삭제 실패하였습니다." +
+                    "or 기존 이미지 순서 업데이트에 실패하였습니다." +
+                    "or 신규 파일 업로드에 실패하였습니다."),
     })
     @RequestBody(content = @Content(
             encoding = @Encoding(name = "goodsModify", contentType = MediaType.APPLICATION_JSON_VALUE)))
@@ -102,8 +114,9 @@ public class GoodsController {
             @AuthenticationPrincipal Long loginUserId,
             @Valid @RequestPart(value = "goodsModify") GoodsRequestDto.GoodsModify goodsModify,
             @RequestPart(value = "newImageFiles", required = false) List<MultipartFile> newImageFiles) {
+
         goodsService.updateGoods(loginUserId, goodsModify, newImageFiles);
-        return new ResponseEntity<>("굿즈가 성공적으로 수정되었습니다.", HttpStatus.OK);
+        return ResponseEntity.ok("굿즈가 성공적으로 수정되었습니다.");
     }
 
     @Operation(
@@ -111,7 +124,7 @@ public class GoodsController {
             description = "경매 상태가 대기 or 종료 일 때만 굿즈 글을 삭제할 수 있습니다."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "굿즈 글이 성공적으로 삭제되었습니다."),
+            @ApiResponse(responseCode = "200"),
             @ApiResponse(responseCode = "400", description = "경매 대기 또는 종료된 후에만 삭제가 가능합니다."),
             @ApiResponse(responseCode = "403", description = "삭제 권한이 없습니다."),
             @ApiResponse(responseCode = "404", description = "존재하지 않는 굿즈입니다."),
@@ -122,7 +135,18 @@ public class GoodsController {
     public ResponseEntity<String> deleteGoods(@AuthenticationPrincipal Long loginUserId,
                                               @NotNull @RequestParam Long goodsId) {
         goodsService.deleteGoods(loginUserId, goodsId);
-        return new ResponseEntity<>("굿즈 글이 성공적으로 삭제되었습니다.", HttpStatus.OK);
+        return ResponseEntity.ok("굿즈 글이 성공적으로 삭제되었습니다.");
+    }
+
+
+    @Operation(
+            summary = "찜 기준 인기 굿즈 목록",
+            description = "찜 기준 인기 굿즈 목록을 조회합니다.")
+    @GetMapping("/hot-goods")
+    public ResponseEntity<List<WishResponseDto.TopGoodsCard>> getTop6GoodsOnWishCount() {
+
+        List<WishResponseDto.TopGoodsCard> top6GoodsList = goodsService.getTop6GoodsOnWishCount();
+        return ResponseEntity.ok(top6GoodsList);
     }
 
 }

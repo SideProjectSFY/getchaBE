@@ -2,43 +2,48 @@ CREATE DATABASE IF NOT EXISTS getcha;
 
 use getcha;
 
-CREATE TABLE `goods_image` (
-                               `id`	BIGINT	NOT NULL AUTO_INCREMENT,
-                               `goods_id`	BIGINT	NOT NULL,
-                               `file_path`	VARCHAR(512)	NOT NULL	COMMENT '저장 경로 (서버 디스크 또는 AWS S3)',
-                               `origin_filename`	VARCHAR(255)	NOT NULL	COMMENT '사용자가 업로드한 원본 파일명',
-                               `stored_filename`	VARCHAR(255)	NOT NULL	COMMENT '서버에 저장된 파일명(중복방지를 위해 고유값 사용)',
-                               `file_size`	BIGINT	NULL	COMMENT '파일명 옆에 크기 보여주기 위함',
-                               `sort_order`	INT	NULL	COMMENT '정렬기준 1번으로 대표이미지 자동설정',
-                               `created_at`	TIMESTAMP NOT NULL	DEFAULT CURRENT_TIMESTAMP,
-                               CONSTRAINT `PK_GOODS_IMAGE` PRIMARY KEY (`id`)
+create table getcha.goods_image
+(
+    id              bigint auto_increment primary key,
+    goods_id        bigint                              not null,
+    file_path       varchar(512)                        not null comment '저장 경로 (서버 디스크 또는 AWS S3)',
+    origin_filename varchar(255)                        not null comment '사용자가 업로드한 원본 파일명',
+    stored_filename varchar(255)                        not null comment '서버에 저장된 파일명(중복방지를 위해 고유값 사용)',
+    file_size       bigint                              null comment '파일명 옆에 크기 보여주기 위함',
+    sort_order      int                                 null comment '정렬기준 1번으로 대표이미지 자동설정',
+    created_at      timestamp default CURRENT_TIMESTAMP not null
 );
 
-CREATE TABLE `goods` (
-                         `id`	BIGINT	NOT NULL AUTO_INCREMENT,
-                         `seller_id`	BIGINT NOT NULL	COMMENT '유저ID',
-                         `anime_id`	BIGINT	NOT NULL	COMMENT 'TMDB 애니 ID',
-                         `category` ENUM('FIGURE', 'PHOTOCARD', 'ACRYLICSTAND', 'KEYRING', 'DOLL', 'POSTER', 'BADGE', 'OTHER')	NOT NULL,
-                         `title`	VARCHAR(300)	NOT NULL,
-                         `description`	TEXT	NOT NULL,
-                         `start_price`	INT	NOT NULL,
-                         `instant_buy_price`	INT	NULL,
-                         `auction_status` ENUM('WAIT', 'PROCEEDING', 'COMPLETED', 'STOPPED')	NOT NULL COMMENT 'DDL 레벨에서 최소한 ENUM',
-                         `duration`	INT	NOT NULL	DEFAULT 3	COMMENT '2일 ~ 14일',
-                         `auction_end_at`	TIMESTAMP	NULL	COMMENT '명확하게 경매 종료 용도로 정의',
-                         `created_at`	TIMESTAMP	NOT NULL DEFAULT CURRENT_TIMESTAMP	COMMENT '시스템컬럼 개념',
-                         `updated_at`	TIMESTAMP	NULL	COMMENT '시스템컬럼 개념',
-                         `deleted_at`	TIMESTAMP	NULL	COMMENT 'soft deleted',
-                         CONSTRAINT `PK_GOODS` PRIMARY KEY (`id`)
+
+create table goods
+(
+    id                bigint auto_increment primary key,
+    seller_id         bigint                                                                                      not null comment '유저ID',
+    anime_id          bigint                                                                                      not null comment 'TMDB 애니 ID',
+    category          enum ('FIGURE', 'PHOTOCARD', 'ACRYLICSTAND', 'KEYRING', 'DOLL', 'POSTER', 'BADGE', 'OTHER') not null,
+    title             varchar(300)                                                                                not null,
+    description       text                                                                                        not null,
+    start_price       int                                                                                         not null,
+    instant_buy_price int                                                                                         null,
+    auction_status    enum ('WAIT', 'PROCEEDING', 'COMPLETED', 'STOPPED')                                         not null comment 'DDL 레벨에서 최소한 ENUM',
+    duration          int       default 3                                                                         not null comment '2일 ~ 14일',
+    auction_end_at    timestamp                                                                                   null comment '명확하게 경매 종료 용도로 정의',
+    created_at        timestamp default CURRENT_TIMESTAMP                                                         not null comment '시스템컬럼 개념',
+    updated_at        timestamp                                                                                   null comment '시스템컬럼 개념',
+    deleted_at        timestamp                                                                                   null comment 'soft deleted'
 );
 
-CREATE TABLE `wishlist` (
-                            `id`	BIGINT	NOT NULL  AUTO_INCREMENT,
-                            `goods_id`	BIGINT	NOT NULL,
-                            `user_id`	BIGINT	NOT NULL,
-                            `created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
-                            CONSTRAINT `PK_WHISHLIST` PRIMARY KEY (`id`)
+
+create table wishlist
+(
+    id         bigint auto_increment primary key,
+    goods_id   bigint                              not null,
+    user_id    bigint                              not null,
+    created_at timestamp default CURRENT_TIMESTAMP not null,
+    constraint uq_wishlist
+        unique (goods_id, user_id)
 );
+
 
 CREATE TABLE `tmdb_genre` (
                               `id`	INT	NOT NULL AUTO_INCREMENT	COMMENT 'TMDB 애니장르',
@@ -70,15 +75,16 @@ CREATE TABLE `notification` (
                                 CONSTRAINT `PK_NOTIFICATION` PRIMARY KEY (`id`)
 );
 
-CREATE TABLE `bid` (
-                       `id`	BIGINT	NOT NULL AUTO_INCREMENT,
-                       `goods_id`	BIGINT	NOT NULL,
-                       `bidder_id`	BIGINT NOT NULL	COMMENT '유저 ID',
-                       `bid_amount`	INT	NOT NULL,
-                       `is_highest`	BOOLEAN	NOT NULL	DEFAULT FALSE,
-                       `created_at`	TIMESTAMP	NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                       CONSTRAINT `PK_BID` PRIMARY KEY (`id`)
+create table bid
+(
+    id         bigint auto_increment primary key,
+    goods_id   bigint                               not null,
+    bidder_id  bigint                               not null comment '유저 ID',
+    bid_amount int                                  not null,
+    is_highest tinyint(1) default 0                 not null comment 'boolean 과 같은 타입',
+    created_at timestamp  default CURRENT_TIMESTAMP not null
 );
+
 
 CREATE TABLE `user` (
                         `id`	BIGINT	NOT NULL AUTO_INCREMENT,
@@ -98,37 +104,41 @@ CREATE TABLE `user` (
                         CONSTRAINT `PK_USER` PRIMARY KEY (`id`)
 );
 
-CREATE TABLE `comment` (
-                           `id`	BIGINT	NOT NULL AUTO_INCREMENT,
-                           `goods_id`	BIGINT	NOT NULL,
-                           `writer_id`	BIGINT NOT NULL	COMMENT '유저ID',
-                           `parent_id`	BIGINT	NULL	COMMENT '댓글ID 를 외래키로 가짐(셀프조인)',
-                           `content`	TEXT	NULL,
-                           `created_at`	TIMESTAMP	NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                           `updated_at`	TIMESTAMP	NULL,
-                           `deleted_at`	TIMESTAMP	NULL comment 'soft 삭제',
-                           CONSTRAINT `PK_COMMENT` PRIMARY KEY (`id`)
+create table comment
+(
+    id         bigint auto_increment primary key,
+    goods_id   bigint                              not null,
+    writer_id  bigint                              not null comment '유저ID',
+    parent_id  bigint                              null comment '댓글ID 를 외래키로 가짐(셀프조인)',
+    content    text                                null,
+    created_at timestamp default CURRENT_TIMESTAMP not null,
+    updated_at timestamp                           null,
+    deleted_at timestamp                           null comment 'soft 삭제'
 );
 
-CREATE TABLE `coin_wallet` (
-                               `id`	BIGINT	NOT NULL AUTO_INCREMENT,
-                               `user_id`	BIGINT	NOT NULL,
-                               `balance`	INT	NOT NULL	COMMENT '예치금이 뺀 잔액',
-                               `locked_balance`	INT	NULL	COMMENT '예치금 총액(다수경매)',
-                               CONSTRAINT `PK_COIN_WALLET` PRIMARY KEY (`id`),
-                               CONSTRAINT UQ_COIN_WALLET_USER UNIQUE (user_id)
+create table coin_wallet
+(
+    id             bigint auto_increment primary key,
+    user_id        bigint not null,
+    balance        int    not null comment '예치금이 뺀 잔액',
+    locked_balance int    null comment '예치금 총액(다수경매)',
+    constraint UQ_coin_wallet_user unique (user_id)
 );
 
-CREATE TABLE `wallet_history` (
-                                  `id`	BIGINT	NOT NULL AUTO_INCREMENT,
-                                  `wallet_id`	BIGINT	NOT NULL,
-                                  `goods_id`	BIGINT	NULL,
-                                  `transaction_type`	ENUM('CHARGE', 'BIDLOCK', 'BIDUNLOCK', 'INCOME', 'EXPENSE')	NOT NULL	COMMENT 'DDL 에서 ENUM 제약 걸기',
-                                  `amount`	INT	NOT NULL,
-                                  `description` TEXT	NULL,
-                                  `created_at`	TIMESTAMP	NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                  CONSTRAINT `PK_WALLET_HISTORY` PRIMARY KEY (`id`)
+
+
+create table getcha.wallet_history
+(
+    id               bigint auto_increment primary key,
+    wallet_id        bigint                                                       not null,
+    goods_id         bigint                                                       null,
+    transaction_type enum ('CHARGE', 'BIDLOCK', 'BIDUNLOCK', 'INCOME', 'EXPENSE') not null comment 'DDL 에서 ENUM 제약 걸기',
+    amount           int                                                          not null,
+    description      text                                                         null,
+    created_at       timestamp default CURRENT_TIMESTAMP                          not null
 );
+
+
 
 CREATE TABLE `anime_genre` (
                                `tmdb_genre_id`	INT	NOT NULL	COMMENT 'TMDB 애니장르',

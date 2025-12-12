@@ -123,11 +123,17 @@ public interface GoodsMapper {
     int deleteGoods(Long goodsId, Long loginUserId);
 
     /**
-     * 진행중인 굿즈 존재 여부
+     * 굿즈 존재 여부
      * @param loginUserId 로그인한 사용자ID(pk)
+     * @param goodsId 굿즈ID (회원탈퇴시 null)
      * @return 존재 여부 결과 반환
      */
-    boolean existsActiveGoodsByUserId(Long loginUserId);
+    boolean existsActiveGoodsByUserId(Long loginUserId, Long goodsId);
 
-
+    /**
+     * 판매자 조회
+     * @param goodsId 굿즈Id
+     * @return 판매자Id(pk)
+     */
+    Long selectSellerIdByGoodsId(Long goodsId);
 }

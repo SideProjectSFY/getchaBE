@@ -86,6 +86,7 @@
             LEFT JOIN goods_image gi
                 ON gi.goods_id = g.id
                 AND gi.sort_order = 1
+        WHERE g.deleted_at IS NULL
         GROUP BY g.id
         ORDER BY g.created_at DESC
     </select>
@@ -105,7 +106,7 @@
             MAX(ta.title) AS animeTitle,
             MAX(b.bid_amount) AS currentBidAmount,
             MAX(gi.file_path) AS mainFilePath,
-            COUNT(w.goods_id) AS wishCount
+            COUNT(w.id) AS wishCount
         FROM goods g
             LEFT JOIN user u ON g.seller_id = u.id
             LEFT JOIN bid b ON b.goods_id = g.id AND b.is_highest = TRUE
@@ -136,8 +137,11 @@
                 <when test="sort.equals('wish')">
                     wishCount DESC
                 </when>
-                <otherwise>
+                <when test="sort.equals('auctionEndAt')">
                     g.auction_end_at ASC
+                </when>
+                <otherwise>
+                    createdAt DESC
                 </otherwise>
             </choose>
         LIMIT #{size} OFFSET #{offset}
@@ -275,14 +279,29 @@
         </where>
     </update>
 
-    <!-- 진행 중인 굿즈 존재 여부 -->
+    <!--  본인 글인지 체크 -->
+    <select id="selectSellerIdByGoodsId" resultType="long">
+        SELECT seller_id
+        FROM goods
+        WHERE id = #{goodsId}
+    </select>
+
+
+    <!-- 굿즈 존재 여부 (파라미터에 따라 다르게 조회) -->
     <select id="existsActiveGoodsByUserId">
         SELECT EXISTS(
             SELECT 1
             FROM goods
-            WHERE seller_id = #{loginUserId}
-            AND auction_status = 'PROCEEDING'
-            AND deleted_at IS NULL
+            <where>
+                <if test="goodsId == null">
+                    seller_id = #{loginUserId}
+                    AND auction_status = 'PROCEEDING'
+                </if>
+                <if test="goodsId != null">
+                    id = #{goodsId}
+                </if>
+                AND deleted_at IS NULL
+            </where>
         );
     </select>
 
@@ -316,6 +335,7 @@
         </foreach>;
     </select>
 
+    <!-- 파일Id 리스트 삭제 -->
     <delete id="deleteGoodsImageByFileId" parameterType="java.util.List">
         DELETE FROM goods_image
         WHERE id IN

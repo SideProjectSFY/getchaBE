@@ -3,6 +3,7 @@ package com.ssafy.backend.goods.service;
 import com.ssafy.backend.common.PageResponse;
 import com.ssafy.backend.goods.model.GoodsRequestDto;
 import com.ssafy.backend.goods.model.GoodsResponseDto;
+import com.ssafy.backend.wish.model.WishResponseDto;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -55,5 +56,12 @@ public interface GoodsService {
      * @param goodsId 삭제할 굿즈 ID
      */
     void deleteGoods(Long loginUserId, Long goodsId);
+
+
+    /**
+     * 찜 기준 인기 굿즈 조회
+     * @return 찜 기준 인기 굿즈 리스트
+     */
+    List<WishResponseDto.TopGoodsCard> getTop6GoodsOnWishCount();
 
 }

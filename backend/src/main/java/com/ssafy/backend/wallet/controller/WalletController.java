@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -40,7 +41,7 @@ public class WalletController {
             description = "자산 현황을 조회합니다."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "자산 현황을 성공적으로 조회하였습니다."),
+            @ApiResponse(responseCode = "200"),
             @ApiResponse(responseCode = "404", description = "존재하지 않는 유저 또는 지갑이 없습니다."),
     })
     @GetMapping
@@ -55,16 +56,20 @@ public class WalletController {
             description = "코인을 충전합니다."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "코인이 성공적으로 충전되었습니다."),
-            @ApiResponse(responseCode = "400", description = "충전금액은 양수여야 합니다."),
-            @ApiResponse(responseCode = "500", description = "코인 충전에 실패했습니다."),
+            @ApiResponse(responseCode = "201"),
+            @ApiResponse(responseCode = "400", description = "충전 금액은 0보다 커야 합니다."),
+            @ApiResponse(responseCode = "404", description = "지갑 정보가 존재하지 않습니다."),
+            @ApiResponse(responseCode = "500", description = "코인 충전에 실패했습니다." +
+                    "or 지갑 거래 내역 기록에 실패하였습니다."),
     })
     @PostMapping("/charge")
     public ResponseEntity<Integer> chargeCoin(
             @AuthenticationPrincipal Long loginUserId,
             @Valid @RequestBody WalletRequestDto.ChargeCoinAmount chargeCoinAmount) {
         Integer balance = walletService.chargeCoin(loginUserId, chargeCoinAmount);
-        return ResponseEntity.ok(balance);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(balance);
     }
 
 

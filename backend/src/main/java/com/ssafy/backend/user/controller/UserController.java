@@ -4,6 +4,7 @@ import com.ssafy.backend.goods.model.GoodsResponseDto;
 import com.ssafy.backend.user.model.UserRequestDto;
 import com.ssafy.backend.user.model.UserResponseDto;
 import com.ssafy.backend.user.service.UserService;
+import com.ssafy.backend.wish.model.WishResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -83,5 +84,18 @@ public class UserController {
             @AuthenticationPrincipal Long loginUserId) {
         List<GoodsResponseDto.MyPageInParticipatedGoodsCard> allRegisteredGoods = userService.getAllParticipatedGoods(loginUserId);
         return ResponseEntity.ok(allRegisteredGoods);
+    }
+
+    /**
+     * 마이페이지 내 사용자가 찜한 굿즈 목록 조회
+     */
+    @Operation(
+            summary = "사용자가 찜한 굿즈 목록 조회",
+            description = "마이페이지 내 사용자가 찜한 굿즈 목록 조회합니다.")
+    @GetMapping("/me/wish")
+    public ResponseEntity<List<WishResponseDto.WishedGoodsAll>> getAllWishedGoods(
+            @AuthenticationPrincipal Long loginUserId) {
+        List<WishResponseDto.WishedGoodsAll> allWishedGoods = userService.getAllWishedGoods(loginUserId);
+        return ResponseEntity.ok(allWishedGoods);
     }
 }
