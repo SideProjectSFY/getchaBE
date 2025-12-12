@@ -136,8 +136,11 @@
                 <when test="sort.equals('wish')">
                     wishCount DESC
                 </when>
-                <otherwise>
+                <when test="sort.equals('auctionEndAt')">
                     g.auction_end_at ASC
+                </when>
+                <otherwise>
+                    createdAt DESC
                 </otherwise>
             </choose>
         LIMIT #{size} OFFSET #{offset}
