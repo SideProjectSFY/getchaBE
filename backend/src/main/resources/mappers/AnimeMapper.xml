@@ -50,6 +50,12 @@
             updated_at = CURRENT_TIMESTAMP
     </insert>
 
+    <!-- 3. 애니-장르 매핑 저장 -->
+    <insert id="insertAnimeGenre">
+        <!-- pk이기 때문에 IGNORE -->
+        INSERT IGNORE INTO anime_genre(tmdb_genre_id, anime_id)
+        VALUES (#{genreId}, #{animeId})
+    </insert>
 
 </mapper>
 

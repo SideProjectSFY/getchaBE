@@ -61,8 +61,24 @@ public class AnimeServiceImpl implements AnimeService {
                 throw new CustomException("존재하지 않는 애니메이션입니다.", HttpStatus.NOT_FOUND);
             }
 
-            // DB 저장
-            searchAnimeFromTmdb.forEach(animeMapper::insertAnime);
+            // DB 저장 + 장르 저장
+            for(TmdbAnimeEntityDto anime : searchAnimeFromTmdb){
+                // 1) tmdb_anime 저장
+                animeMapper.insertAnime(anime);
+
+                // 2) anime_genre 저장
+                if(anime.getGenreIds() != null){
+                    for(Integer genreId : anime.getGenreIds()){
+
+                        // 애니메이션 장르(16)은 공통이므로 저장 X
+                        if(genreId == 16){
+                            continue;
+                        }
+                        animeMapper.insertAnimeGenre(anime.getId(), genreId);
+                    }
+                }
+            }
+
             // 저장 후 다시 List 로 반환
             localList = animeMapper.findAnimeByKeyword(keyword);
         }
@@ -106,14 +122,26 @@ public class AnimeServiceImpl implements AnimeService {
 
         for (JsonNode node : results) {
 
+            // 1. 애니메이션 장르(16) 포함 여부 체크
             if (!containsAnimationGenre(node.path("genre_ids"))) {
                 continue;
             }
 
             long tmdbId = node.path("id").asLong();
 
+            // 2. 상세 정보 조회
             JsonNode detail = searchDetail(tmdbId);
 
+            //3. genre_ids 배열 -> List<Integer> 로 파싱
+            JsonNode genreIdsNode = node.path("genre_ids");
+            List<Integer> genreIds = new ArrayList<>();
+            if(genreIdsNode.isArray()){
+                for(JsonNode genre : genreIdsNode){
+                    genreIds.add(genre.asInt());
+                }
+            }
+
+            // 4. Dto 생성
             TmdbAnimeEntityDto anime = TmdbAnimeEntityDto.builder()
                     .id(tmdbId)
                     .title(resolveTitle(detail))
@@ -122,6 +150,7 @@ public class AnimeServiceImpl implements AnimeService {
                     .voteAverage(Math.round(detail.path("vote_average").asDouble(0)))
                     .voteCount(detail.path("vote_count").asLong(0))
                     .popularity(Math.round(detail.path("popularity").asDouble(0)))
+                    .genreIds(genreIds)
                     .build();
 
             list.add(anime);
