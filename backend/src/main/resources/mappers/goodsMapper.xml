@@ -305,6 +305,16 @@
         );
     </select>
 
+    <!-- PROCEEDING 제외 ! 등록한 굿즈 글 개수 확인-->
+    <select id="existsGoodsByUserId" resultType="int">
+        SELECT count(*)
+        FROM goods
+        WHERE seller_id = #{loginUserId}
+        AND auction_status != 'PROCEEDING'
+        AND deleted_at IS NULL
+    </select>
+
+
     <!-- 굿즈 다중 이미지(=파일) 업로드 -->
     <insert id="insertFiles" parameterType="GoodsImage" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO goods_image (

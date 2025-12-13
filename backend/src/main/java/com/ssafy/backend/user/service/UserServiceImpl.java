@@ -105,18 +105,22 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deleteMyAccount(Long userId) {
 
-        // 1. 등록한 굿즈가 있을 경우
+        // 1. 등록한 진행중인 상태의 굿즈가 있을 경우
         boolean existGoodsResult = goodsMapper.existsActiveGoodsByUserId(userId, null);
         //1-1. 'PROCEEDING'(진행중) 인 경우 삭제 불가
         if(existGoodsResult) {
             throw new CustomException("진행 중인 경매가 있어 회원 탈퇴를 할 수 없습니다.", HttpStatus.BAD_REQUEST);
         }
 
-        //1-2. 모든 굿즈 글이 'PROCEEDING'(진행중) 이 아닌 경우 삭제
-        int deleteResult = goodsMapper.deleteGoods(null, userId);
-        if(deleteResult < 1) throw new CustomException("굿즈 글 삭제에 실패하였습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
-
-        // 2. 예치금이 0원일 경우에만 삭제 가능
+        // 2. 진행중 상태가 아닌 등록한 굿즈 글이 존재하는지 확인
+        int existGoodsResultNotProceeding = goodsMapper.existsGoodsByUserId(userId);
+        if(existGoodsResultNotProceeding >= 1) {
+            // 등록한 글이 있는 경우
+            // 2-1. 모든 굿즈 글이 'PROCEEDING'(진행중) 이 아닌 경우 삭제
+            int deleteResult = goodsMapper.deleteGoods(null, userId);
+            if(deleteResult < 1) throw new CustomException("굿즈 글 삭제에 실패하였습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        // 3. 예치금이 0원일 경우에만 삭제 가능
         int lockedBalance = walletMapper.selectCoinWallet(userId).getLockedBalance();
         if(lockedBalance != 0) throw new CustomException("진행 중인 경매가 있어 회원 탈퇴를 할 수 없습니다.", HttpStatus.BAD_REQUEST);
 
