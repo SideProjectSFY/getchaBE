@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Swagger 허용
                         .requestMatchers(
+                                "/images/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
@@ -58,6 +59,12 @@ public class SecurityConfig {
 
                         // 알림 허용
                         .requestMatchers("/api/v1/notification/**").permitAll()
+
+                        // 굿즈 목록 조회 허용
+                        .requestMatchers("/api/v1/goods/list/**").permitAll()
+
+                        // 찜 기준 인기 굿즈 목록 조회 허용
+                        .requestMatchers("/api/v1/goods/hot-goods").permitAll()
 
                         // 나머지 API 인증 필요
                         .anyRequest().authenticated()

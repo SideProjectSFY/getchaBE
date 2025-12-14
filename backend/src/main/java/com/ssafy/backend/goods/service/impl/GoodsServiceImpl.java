@@ -29,7 +29,8 @@ public class GoodsServiceImpl implements GoodsService {
     private final FileServie fileServie;
     private static final int LIMIT_AMOUNT = 5_000_000;
 
-    private final String webPath = "/goodsImageFiles";
+    // 실제 서버 디렉토리명 숨기기 위해 가상 파일명으로 변경
+    private final String webPath = "/images";
 
 
     @Override
