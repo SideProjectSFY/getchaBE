@@ -131,6 +131,14 @@ public interface GoodsMapper {
     boolean existsActiveGoodsByUserId(Long loginUserId, Long goodsId);
 
     /**
+     * 진행 중 상태가 아닌 굿즈 존재 여부
+     * @param loginUserId 로그인한 사용자ID(pk)
+     * @return 존재 여부 결과 반환
+     */
+    int existsGoodsByUserId(Long loginUserId);
+
+
+    /**
      * 판매자 조회
      * @param goodsId 굿즈Id
      * @return 판매자Id(pk)
