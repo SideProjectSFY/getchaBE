@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.backend.payment.model.PaymentMapper">
+
+    <!-- 결제 준비 READY -->
+    <insert id="insertReady" parameterType="com.ssafy.backend.payment.model.Payment">
+        INSERT INTO payment (
+            user_id,
+            merchant_uid,
+            imp_uid,
+            amount,
+            status,
+            paid_at,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{userId},
+            #{merchantUid},
+            #{impUid},
+            #{amount},
+            #{status},
+            #{paidAt},
+            NOW(),
+            NOW()
+        )
+    </insert>
+
+    <!-- merchanUid로 결제 조회 -->
+    <select id="findByMerchantUid" resultType="com.ssafy.backend.payment.model.Payment">
+        SELECT
+            id,
+            user_id,
+            merchant_uid,
+            imp_uid,
+            amount,
+            status,
+            paid_at,
+            created_at,
+            updated_at
+        FROM payment
+        WHERE merchant_uid = #{merchantUid}
+        LIMIT 1
+    </select>
+
+    <!-- 결제 성공 PAID -->
+    <update id="updatePaid">
+        UPDATE payment
+        SET
+            imp_uid = #{impUid},
+            amount = #{amount},
+            status = 'PAID',
+            paid_at = NOW(),
+            updated_at = NOW()
+        WHERE merchant_uid = #{merchantUid}
+        AND status = 'READY'
+    </update>
+
+    <!-- 결제 실패 FAILED -->
+    <update id="updateFailed">
+        UPDATE payment
+        SET
+            imp_uid = #{impUid},
+            status = 'FAILED',
+            updated_at = NOW()
+        WHERE merchant_uid = #{merchantUid}
+    </update>
+
+</mapper>
