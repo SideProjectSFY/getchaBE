@@ -51,7 +51,7 @@
             LEFT JOIN tmdb_anime ta
                 ON ta.id = u.liked_anime_id1
         WHERE goods_id = #{goodsId}
-        ORDER BY createdAt DESC
+        ORDER BY createdAt
     </select>
 
     <!-- 댓글 수정하기 -->
