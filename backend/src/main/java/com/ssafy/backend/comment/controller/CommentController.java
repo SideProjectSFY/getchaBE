@@ -42,7 +42,7 @@ public class CommentController {
     @PostMapping
     public ResponseEntity<CommentResponseDTO.AddCommentResult> postComment(
             @AuthenticationPrincipal Long loginUserId,
-            @Valid @ModelAttribute CommentRequestDTO.CommentRegister commentRegister) {
+            @Valid @RequestBody CommentRequestDTO.CommentRegister commentRegister) {
 
         CommentResponseDTO.AddCommentResult addCommentResult = commentService.addComment(loginUserId, commentRegister);
         return ResponseEntity
@@ -75,7 +75,7 @@ public class CommentController {
     @PutMapping
     public ResponseEntity<String> updateComment(
             @AuthenticationPrincipal Long loginUserId,
-            @Valid @ModelAttribute CommentRequestDTO.CommentModify commentModify) {
+            @Valid @RequestBody CommentRequestDTO.CommentModify commentModify) {
         commentService.updateComment(loginUserId, commentModify);
         return ResponseEntity.ok("댓글 or 대댓글이 성공적으로 수정되었습니다.");
     }
