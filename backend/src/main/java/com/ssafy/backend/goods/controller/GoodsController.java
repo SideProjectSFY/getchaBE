@@ -67,9 +67,11 @@ public class GoodsController {
             description = "굿즈 목록을 조회합니다."
     )
     @GetMapping("/list")
-    public ResponseEntity<PageResponse<GoodsResponseDto.GoodsCard>> getAllGoods(@Valid @ModelAttribute GoodsRequestDto.GoodsLookUp goodsLookUp) {
+    public ResponseEntity<PageResponse<GoodsResponseDto.GoodsCard>> getAllGoods(
+            @Valid @ModelAttribute GoodsRequestDto.GoodsLookUp goodsLookUp,
+            @AuthenticationPrincipal Long loginUserId) {
 
-        PageResponse<GoodsResponseDto.GoodsCard> allGoods = goodsService.getAllGoods(goodsLookUp);
+        PageResponse<GoodsResponseDto.GoodsCard> allGoods = goodsService.getAllGoods(goodsLookUp, loginUserId);
         return ResponseEntity.ok(allGoods);
     }
 
@@ -143,9 +145,10 @@ public class GoodsController {
             summary = "찜 기준 인기 굿즈 목록",
             description = "찜 기준 인기 굿즈 목록을 조회합니다.")
     @GetMapping("/hot-goods")
-    public ResponseEntity<List<WishResponseDto.TopGoodsCard>> getTop6GoodsOnWishCount() {
+    public ResponseEntity<List<WishResponseDto.TopGoodsCard>> getTop6GoodsOnWishCount(
+            @AuthenticationPrincipal Long loginUserId) {
 
-        List<WishResponseDto.TopGoodsCard> top6GoodsList = goodsService.getTop6GoodsOnWishCount();
+        List<WishResponseDto.TopGoodsCard> top6GoodsList = goodsService.getTop6GoodsOnWishCount(loginUserId);
         return ResponseEntity.ok(top6GoodsList);
     }
 

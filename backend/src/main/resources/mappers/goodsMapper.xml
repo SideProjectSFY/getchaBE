@@ -92,7 +92,7 @@
     </select>
 
     <!-- 굿즈 목록 조회 (검색/필터) -->
-    <select id="selectAllGoodsBySearch" parameterType="com.ssafy.backend.goods.model.GoodsRequestDto$GoodsLookUp" resultType="com.ssafy.backend.goods.model.GoodsResponseDto$GoodsCard">
+    <select id="selectAllGoodsBySearch" resultType="com.ssafy.backend.goods.model.GoodsResponseDto$GoodsCard">
         SELECT
             g.id AS goodsId,
             g.title AS title,
@@ -106,7 +106,11 @@
             MAX(ta.title) AS animeTitle,
             MAX(b.bid_amount) AS currentBidAmount,
             MAX(gi.file_path) AS mainFilePath,
-            COUNT(w.id) AS wishCount
+            COUNT(w.id) AS wishCount,
+            CASE
+                WHEN #{loginUserId} IS NULL THEN 0
+                ELSE MAX(CASE WHEN w.user_id = #{loginUserId} THEN 1 ELSE 0 END)
+            END AS checkWish
         FROM goods g
             LEFT JOIN user u ON g.seller_id = u.id
             LEFT JOIN bid b ON b.goods_id = g.id AND b.is_highest = TRUE
@@ -115,36 +119,36 @@
             LEFT JOIN tmdb_anime ta ON ta.id = g.anime_id
         <where>
             g.deleted_at IS NULL
-            <if test="auctionStatus != null">
-                and auction_status = #{auctionStatus}
+            <if test="goodsLookUp.auctionStatus != null">
+                and auction_status = #{goodsLookUp.auctionStatus}
             </if>
-            <if test="category != null">
-                and category = #{category}
+            <if test="goodsLookUp.category != null">
+                and category = #{goodsLookUp.category}
             </if>
-            <if test="searchName != null and searchName != ''">
+            <if test="goodsLookUp.searchName != null and goodsLookUp.searchName != ''">
                 and (
-                    g.title LIKE CONCAT('%', #{searchName}, '%')
-                    OR ta.title LIKE CONCAT('%', #{searchName}, '%')
+                    g.title LIKE CONCAT('%', #{goodsLookUp.searchName}, '%')
+                    OR ta.title LIKE CONCAT('%', #{goodsLookUp.searchName}, '%')
                 )
             </if>
         </where>
         GROUP BY g.id
         ORDER BY
             <choose>
-                <when test="sort.equals('price')">
+                <when test="goodsLookUp.sort.equals('price')">
                     currentBidAmount DESC
                 </when>
-                <when test="sort.equals('wish')">
+                <when test="goodsLookUp.sort.equals('wish')">
                     wishCount DESC
                 </when>
-                <when test="sort.equals('auctionEndAt')">
+                <when test="goodsLookUp.sort.equals('auctionEndAt')">
                     g.auction_end_at ASC
                 </when>
                 <otherwise>
                     createdAt DESC
                 </otherwise>
             </choose>
-        LIMIT #{size} OFFSET #{offset}
+        LIMIT #{goodsLookUp.size} OFFSET #{goodsLookUp.offset}
     </select>
 
     <!-- 총 굿즈 글 갯수 -->

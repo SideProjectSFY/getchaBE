@@ -43,7 +43,8 @@ public interface GoodsMapper {
      * @param goodsLookUp 굿즈 조회용 정보
      * @return 조회된 굿즈카드 리스트
      */
-    List<GoodsResponseDto.GoodsCard> selectAllGoodsBySearch(GoodsRequestDto.GoodsLookUp goodsLookUp);
+    List<GoodsResponseDto.GoodsCard> selectAllGoodsBySearch(@Param("goodsLookUp")GoodsRequestDto.GoodsLookUp goodsLookUp,
+                                                            @Param("loginUserId") Long loginUserId);
 
     /**
      * 굿즈 카드 총 개수

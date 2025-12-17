@@ -22,6 +22,13 @@ public interface WishMapper {
     int deleteWish(Wish wish);
 
     /**
+     * 찜 카운트
+     * @param goodsId 굿즈Id(pk)
+     * @return 찜 개수
+     */
+    int selectWishCount(Long goodsId);
+
+    /**
      * 마이페이지 내 사용자가 찜한 굿즈 목록 조회
      * @param loginUserId 로그인한 사용자Id(pk)
      * @return 찜한 굿즈 목록 조회
@@ -32,7 +39,7 @@ public interface WishMapper {
      * 찜 기준 인기 굿즈 조회
      * @return 인기 굿즈 조회
      */
-    List<WishResponseDto.TopGoodsCard> selectTop6GoodsOnWishCount();
+    List<WishResponseDto.TopGoodsCard> selectTop6GoodsOnWishCount(Long loginUserId);
 
 
 }

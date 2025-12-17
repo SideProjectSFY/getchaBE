@@ -108,14 +108,16 @@ public class GoodsServiceImpl implements GoodsService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<GoodsResponseDto.GoodsCard> getAllGoods(GoodsRequestDto.GoodsLookUp goodsLookUp) {
+    public PageResponse<GoodsResponseDto.GoodsCard> getAllGoods(
+            GoodsRequestDto.GoodsLookUp goodsLookUp,
+            Long loginUserId) {
 
         int page = goodsLookUp.getPage();
         int size = goodsLookUp.getSize();
 
         // 데이터 조회
         List<GoodsResponseDto.GoodsCard> goodsCardsList =
-                Optional.ofNullable(goodsMapper.selectAllGoodsBySearch(goodsLookUp))
+                Optional.ofNullable(goodsMapper.selectAllGoodsBySearch(goodsLookUp, loginUserId))
                         .orElse(Collections.emptyList()); // 값이 null 일 경우 빈 리스트 던짐
 
         long totalCount = goodsMapper.countGoods(goodsLookUp);
@@ -278,9 +280,9 @@ public class GoodsServiceImpl implements GoodsService {
     }
 
     @Override
-    public List<WishResponseDto.TopGoodsCard> getTop6GoodsOnWishCount() {
+    public List<WishResponseDto.TopGoodsCard> getTop6GoodsOnWishCount(Long loginUserId) {
         // 데이터 조회 후, 없으면 빈 리스트 던지기
-        return Optional.ofNullable(wishMapper.selectTop6GoodsOnWishCount())
+        return Optional.ofNullable(wishMapper.selectTop6GoodsOnWishCount(loginUserId))
                 .orElse(Collections.emptyList());
     }
 

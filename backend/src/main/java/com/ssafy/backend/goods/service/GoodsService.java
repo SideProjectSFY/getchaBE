@@ -29,7 +29,7 @@ public interface GoodsService {
      * 굿즈 카드 목록 조회 (검색/필터)
      * @return 굿즈 카드 목록 리스트
      */
-    PageResponse<GoodsResponseDto.GoodsCard> getAllGoods(GoodsRequestDto.GoodsLookUp goodsLookUp);
+    PageResponse<GoodsResponseDto.GoodsCard> getAllGoods(GoodsRequestDto.GoodsLookUp goodsLookUp, Long loginUserId);
 
     /**
      * 굿즈 상세 조회
@@ -62,6 +62,6 @@ public interface GoodsService {
      * 찜 기준 인기 굿즈 조회
      * @return 찜 기준 인기 굿즈 리스트
      */
-    List<WishResponseDto.TopGoodsCard> getTop6GoodsOnWishCount();
+    List<WishResponseDto.TopGoodsCard> getTop6GoodsOnWishCount(Long loginUserId);
 
 }

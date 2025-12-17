@@ -54,6 +54,7 @@ public class WishServiceImpl implements WishService {
         return WishResponseDto.AddWishResult.builder()
                 .wishId(wish.getId())
                 .checkWish(true)
+                .wishCount(wishMapper.selectWishCount(goodsId))
                 .build();
     }
 
@@ -76,6 +77,7 @@ public class WishServiceImpl implements WishService {
             throw new CustomException("찜 취소하는 것에 실패하였습니다", HttpStatus.INTERNAL_SERVER_ERROR);
 
         return WishResponseDto.DeleteWishResult.builder()
+                .wishCount(wishMapper.selectWishCount(goodsId))
                 .checkWish(false)
                 .build();
 
