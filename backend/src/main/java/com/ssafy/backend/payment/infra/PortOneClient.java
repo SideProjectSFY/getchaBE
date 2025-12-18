@@ -59,7 +59,7 @@ public class PortOneClient {
 
         // 4) 바디
         Map<String, Object> body = Map.of(
-                "merchantUid", merchantUid,
+                "merchant_uid", merchantUid,
                 "amount", amount
         );
 

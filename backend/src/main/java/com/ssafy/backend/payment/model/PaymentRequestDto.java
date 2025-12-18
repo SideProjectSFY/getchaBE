@@ -1,9 +1,11 @@
 package com.ssafy.backend.payment.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-public class PayementRequestDto {
+public class PaymentRequestDto {
 
     //결제 준비 요청
     //프론트 -> 서버 : amount 전달
@@ -17,8 +19,10 @@ public class PayementRequestDto {
     //결제 완료 요청 (검증)
     @Getter
     @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
     public static class Complete {
-        private String merchantId;
+        private String merchantUid;
         private String impUid;
     }
 

@@ -13,6 +13,8 @@ public class PaymentResponseDto {
     }
 
     //결제 완료 응답
+    @Getter
+    @Builder
     public static class Complete {
         private String status;
         private String merchantUid;

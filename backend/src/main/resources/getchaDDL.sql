@@ -300,11 +300,10 @@ CREATE TABLE payment (
                          merchant_uid  VARCHAR(64) NOT NULL,     -- 우리 주문번호(중복 방지 핵심)
                          imp_uid       VARCHAR(64) NULL,         -- 포트원 결제 고유번호 (완료 시 저장)
                          amount        INT NOT NULL,             -- 충전 금액(=골드)
-                         status        ENUM('READY','PAID','FAILED','CANCELED') NOT NULL DEFAULT 'READY',
+                         status        ENUM('READY','PAID','FAILED') NOT NULL DEFAULT 'READY',
                          paid_at       TIMESTAMP NULL,
                          created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                          updated_at    TIMESTAMP NULL,
-                         CONSTRAINT `PK_PAYMENT` PRIMARY KEY (`id`),
                          CONSTRAINT uq_payment_merchant UNIQUE (merchant_uid)
 );
 
