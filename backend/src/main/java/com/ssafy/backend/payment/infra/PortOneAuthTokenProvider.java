@@ -12,6 +12,7 @@ import org.springframework.web.client.RestTemplate;
 import java.time.Instant;
 import java.util.Map;
 
+// portOne api 호출을 위한 access_token 발급
 @Component
 public class PortOneAuthTokenProvider {
 
@@ -23,10 +24,10 @@ public class PortOneAuthTokenProvider {
     @Value("${portone.imp-secret}")
     private String impSecret;
 
-    //토큰 캐시 값
+    //캐시 된 토큰 값
     private String cachedToken;
 
-    //대략적인 토큰 만료 시각
+    //캐시된 토큰 만료 시각
     private Instant cachedTokenExpireAt;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -69,6 +70,7 @@ public class PortOneAuthTokenProvider {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
+        // body + header
         HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
 
         //POST 요청
@@ -80,6 +82,7 @@ public class PortOneAuthTokenProvider {
             throw new CustomException("PortOne 토큰 발급 응답 값이 null 입니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
+        // response 내부 객체 추출
         @SuppressWarnings("unchecked")
         Map<String, Object> res = (Map<String, Object>) top.get("response");
 

@@ -36,13 +36,14 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public PaymentResponseDto.Prepare prepareWalletCharge(Long loginUserId, PaymentRequestDto.Prepare request) {
 
-        // 1. amount 검증
+        // 1. 요청 값 검증
         if(request == null || request.getAmount() == null) {
             throw new CustomException("충전 금액은 필수 값입니다.", HttpStatus.BAD_REQUEST);
         }
 
         int amount = request.getAmount();
 
+        // 음수 x
         if(amount <= 0) {
             throw new CustomException("유효한 금액을 입력해주세요.", HttpStatus.BAD_REQUEST);
         }
@@ -52,7 +53,7 @@ public class PaymentServiceImpl implements PaymentService {
             throw new CustomException("10,000 골드 단위로만 충전 가능합니다.", HttpStatus.BAD_REQUEST);
         }
 
-        // merchantUid 생성 (40자 이내 !)
+        // merchantUid 생성 (portOne 정책 : 40자 이내 !)
         String merchantUid = "pay_" + UUID.randomUUID();
 
         // paymentStatus Ready 저장
@@ -65,7 +66,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         paymentMapper.insertReady(payment);
 
-        // 결제 금액 사전 등록
+        // 결제 금액 사전 등록 (프론트에서 결제 금액 변조할 경우를 막기 위해서!!)
         portOneClient.preparePaymentAmount(merchantUid, amount);
 
         //프론트로 전달
@@ -88,7 +89,7 @@ public class PaymentServiceImpl implements PaymentService {
         String merchantUid = request.getMerchantUid();
         String impUid = request.getImpUid();
 
-        // DB에서 payment READY 확인
+        // DB에서 payment READY 존재 여부 확인
         Payment payment = paymentMapper.findByMerchantUid(merchantUid);
         if(payment == null) {
             return PaymentResponseDto.Complete.builder()
@@ -129,7 +130,7 @@ public class PaymentServiceImpl implements PaymentService {
                     .build();
         }
 
-        // 포트원에서 주는 응답 ex) "code": 0
+        // 포트원에서 주는 응답 코드 확인 ex) "code": 0 (성공)
         Number codeNum = (Number) raw.get("code");
         // 비정상 응답일 경우 (!= 0) -1
         int code = codeNum == null ? -1 : codeNum.intValue();
@@ -143,6 +144,7 @@ public class PaymentServiceImpl implements PaymentService {
                     .build();
         }
 
+        // 실제 결제 데이터 추출
         @SuppressWarnings("unchecked")
         Map<String, Object> res = (Map<String, Object>) raw.get("response");
         if(res == null) {
@@ -181,6 +183,7 @@ public class PaymentServiceImpl implements PaymentService {
                     .build();
         }
 
+        // 결제 금액 검증
         if(!merchantUid.equals(portOneMerchantUid)) {
             String reason = "merchant_uid 값이 불일치 합니다.";
             paymentMapper.updateFailed(merchantUid, impUid, reason);
@@ -191,7 +194,6 @@ public class PaymentServiceImpl implements PaymentService {
                     .build();
         }
 
-        // 결제 금액 검증
         if(payment.getAmount() != portOneAmount) {
             String reason = "결제 금액 불일치로 결제 실패되었습니다.";
             paymentMapper.updateFailed(merchantUid, impUid, reason);
@@ -202,7 +204,8 @@ public class PaymentServiceImpl implements PaymentService {
                     .build();
         }
 
-        // portOne 에서 내려주는 상태값
+        // 결제 상태 확정
+        // portOne 에서 주는 status 값과 비교
         if("paid".equalsIgnoreCase(portOneStatus)) {
             int updated = paymentMapper.updatePaid(merchantUid, impUid, portOneAmount);
             if(updated != 1) {
@@ -260,7 +263,7 @@ public class PaymentServiceImpl implements PaymentService {
             return;
         }
 
-        // PAID 일 경우
+        // 이미 PAID 일 경우
         if(payment.getStatus() == PaymentStatus.PAID) {
             log.info("[Webhook] already paid - merchantUid={}", merchantUid);
             return;
