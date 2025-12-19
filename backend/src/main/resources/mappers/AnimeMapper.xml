@@ -9,11 +9,11 @@
         SELECT
             id,
             title,
-            poster_url AS postUrl,
+            poster_url AS posterUrl,
             overview,
-            vote_average AS voteAverage,
+            ROUND(vote_average, 2) AS voteAverage,
             vote_count AS voteCount,
-            popularity
+            ROUND(popularity, 2) AS popularity
         FROM tmdb_anime
         WHERE title LIKE CONCAT('%', #{keyword}, '%')
         ORDER BY popularity DESC, title ASC
@@ -33,7 +33,7 @@
         VALUES (
             #{id},
             #{title},
-            #{postUrl},
+            #{posterUrl},
             #{overview},
             #{voteAverage},
             #{voteCount},

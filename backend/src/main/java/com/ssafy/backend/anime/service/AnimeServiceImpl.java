@@ -91,7 +91,7 @@ public class AnimeServiceImpl implements AnimeService {
                 .map(a -> new AnimeResponseDto(
                         a.getId(),
                         a.getTitle(),
-                        a.getPostUrl()
+                        a.getPosterUrl()
                 ))
                 .toList();
     }
@@ -145,11 +145,11 @@ public class AnimeServiceImpl implements AnimeService {
             TmdbAnimeEntityDto anime = TmdbAnimeEntityDto.builder()
                     .id(tmdbId)
                     .title(resolveTitle(detail))
-                    .postUrl(resolvePosterUrl(node, detail))
+                    .posterUrl(resolvePosterUrl(node, detail))
                     .overview(resolveOverview(node, detail))
-                    .voteAverage(Math.round(detail.path("vote_average").asDouble(0)))
+                    .voteAverage(Math.round(detail.path("vote_average").asDouble(0) * 100) / 100.0)
                     .voteCount(detail.path("vote_count").asLong(0))
-                    .popularity(Math.round(detail.path("popularity").asDouble(0)))
+                    .popularity(Math.round(detail.path("popularity").asDouble(0) * 100) / 100.0)
                     .genreIds(genreIds)
                     .build();
 
