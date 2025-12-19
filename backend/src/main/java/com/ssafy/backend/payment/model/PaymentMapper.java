@@ -19,5 +19,6 @@ public interface PaymentMapper {
 
     //결제 실패 FAILED
     int updateFailed(@Param("merchantUid") String merchantUid,
-                     @Param("impUid") String impUid);
+                     @Param("impUid") String impUid,
+                     @Param("failReason") String failReason);
 }

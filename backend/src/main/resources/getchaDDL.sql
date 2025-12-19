@@ -297,10 +297,11 @@ CREATE TABLE `anime_genre` (
 CREATE TABLE payment (
                          id            BIGINT AUTO_INCREMENT PRIMARY KEY,
                          user_id       BIGINT NOT NULL,
-                         merchant_uid  VARCHAR(64) NOT NULL,     -- 우리 주문번호(중복 방지 핵심)
-                         imp_uid       VARCHAR(64) NULL,         -- 포트원 결제 고유번호 (완료 시 저장)
-                         amount        INT NOT NULL,             -- 충전 금액(=골드)
+                         merchant_uid  VARCHAR(64) NOT NULL,
+                         imp_uid       VARCHAR(64) NULL,
+                         amount        INT NOT NULL,
                          status        ENUM('READY','PAID','FAILED') NOT NULL DEFAULT 'READY',
+                         fail_reason   VARCHAR(255) NULL,
                          paid_at       TIMESTAMP NULL,
                          created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                          updated_at    TIMESTAMP NULL,

@@ -13,6 +13,7 @@
             imp_uid,
             amount,
             status,
+            fail_reason,
             paid_at,
             created_at,
             updated_at
@@ -22,6 +23,7 @@
             #{impUid},
             #{amount},
             #{status},
+            #{failReason},
             #{paidAt},
             NOW(),
             NOW()
@@ -37,6 +39,7 @@
             imp_uid,
             amount,
             status,
+            fail_reason,
             paid_at,
             created_at,
             updated_at
@@ -52,6 +55,7 @@
             imp_uid = #{impUid},
             amount = #{amount},
             status = 'PAID',
+            fail_reason = NULL,
             paid_at = NOW(),
             updated_at = NOW()
         WHERE merchant_uid = #{merchantUid}
@@ -64,6 +68,7 @@
         SET
             imp_uid = #{impUid},
             status = 'FAILED',
+            fail_reason = #{failReason},
             updated_at = NOW()
         WHERE merchant_uid = #{merchantUid}
     </update>

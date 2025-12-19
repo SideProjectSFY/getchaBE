@@ -120,33 +120,38 @@ public class PaymentServiceImpl implements PaymentService {
         // portOne 실제 결제 정보 가져오기
         Map<String, Object> raw = portOneClient.getPaymentByImpUid(impUid);
         if(raw == null) {
-            paymentMapper.updateFailed(merchantUid, impUid);
+            String reason = "PortOne 응답이 비어있습니다.";
+            paymentMapper.updateFailed(merchantUid, impUid, reason);
             return PaymentResponseDto.Complete.builder()
                     .status("FAILED")
                     .merchantUid(merchantUid)
-                    .failReason("PortOne 응답이 비어있습니다.")
+                    .failReason(reason)
                     .build();
         }
 
+        // 포트원에서 주는 응답 ex) "code": 0
         Number codeNum = (Number) raw.get("code");
+        // 비정상 응답일 경우 (!= 0) -1
         int code = codeNum == null ? -1 : codeNum.intValue();
         if(code != 0) {
-            paymentMapper.updateFailed(merchantUid, impUid);
+            String reason = "PortOne 결제 조회 실패(code=" + code + ")";
+            paymentMapper.updateFailed(merchantUid, impUid, reason);
             return PaymentResponseDto.Complete.builder()
                     .status("FAILED")
                     .merchantUid(merchantUid)
-                    .failReason("PortOne 결제 조회 실패(code=" + code + ")")
+                    .failReason(reason)
                     .build();
         }
 
         @SuppressWarnings("unchecked")
         Map<String, Object> res = (Map<String, Object>) raw.get("response");
         if(res == null) {
-            paymentMapper.updateFailed(merchantUid, impUid);
+            String reason = "PortOne 응답에 결제 정보가 없습니다.";
+            paymentMapper.updateFailed(merchantUid, impUid, reason);
             return PaymentResponseDto.Complete.builder()
                     .status("FAILED")
                     .merchantUid(merchantUid)
-                    .failReason("PortOne 응답에 결제 정보가 없습니다.")
+                    .failReason(reason)
                     .build();
         }
 
@@ -155,41 +160,45 @@ public class PaymentServiceImpl implements PaymentService {
 
         Number portOneAmountNum = (Number) res.get("amount");
         if(portOneAmountNum == null) {
-            paymentMapper.updateFailed(merchantUid, impUid);
+            String reason = "PortOne 금액 정보가 없습니다.";
+            paymentMapper.updateFailed(merchantUid, impUid, reason);
             return PaymentResponseDto.Complete.builder()
                     .status("FAILED")
                     .merchantUid(merchantUid)
-                    .failReason("PortOne 금액 정보가 없습니다.")
+                    .failReason(reason)
                     .build();
         }
         int portOneAmount = portOneAmountNum.intValue();
 
         String portOneStatus = (String) res.get("status");
         if(portOneStatus == null) {
-            paymentMapper.updateFailed(merchantUid, impUid);
+            String reason = "PortOne 결제 상태가 없습니다.";
+            paymentMapper.updateFailed(merchantUid, impUid, reason);
             return PaymentResponseDto.Complete.builder()
                     .status("FAILED")
                     .merchantUid(merchantUid)
-                    .failReason("PortOne 결제 상태가 없습니다.")
+                    .failReason(reason)
                     .build();
         }
 
         if(!merchantUid.equals(portOneMerchantUid)) {
-            paymentMapper.updateFailed(merchantUid, impUid);
+            String reason = "merchant_uid 값이 불일치 합니다.";
+            paymentMapper.updateFailed(merchantUid, impUid, reason);
             return PaymentResponseDto.Complete.builder()
                     .status("FAILED")
                     .merchantUid(merchantUid)
-                    .failReason("merchant_uid 값이 불일치 합니다.")
+                    .failReason(reason)
                     .build();
         }
 
         // 결제 금액 검증
         if(payment.getAmount() != portOneAmount) {
-            paymentMapper.updateFailed(merchantUid, impUid);
+            String reason = "결제 금액 불일치로 결제 실패되었습니다.";
+            paymentMapper.updateFailed(merchantUid, impUid, reason);
             return PaymentResponseDto.Complete.builder()
                     .status("FAILED")
                     .merchantUid(merchantUid)
-                    .failReason("결제 금액 불일치로 결제 실패되었습니다.")
+                    .failReason(reason)
                     .build();
         }
 
@@ -217,13 +226,14 @@ public class PaymentServiceImpl implements PaymentService {
         }else {
             // 실패는 wallet_history 에 기록 X
             // payment에만 기록
-            paymentMapper.updateFailed(merchantUid, impUid);
+            String reason = "결제가 실패되었습니다.";
+            paymentMapper.updateFailed(merchantUid, impUid, reason);
 
             return PaymentResponseDto.Complete.builder()
                     .status("FAILED")
                     .merchantUid(merchantUid)
                     .amount(portOneAmount)
-                    .failReason("결제가 실패되었습니다.")
+                    .failReason(reason)
                     .build();
         }
     }
