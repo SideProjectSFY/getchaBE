@@ -70,6 +70,7 @@ public class GoodsResponseDto {
 
         private Category category;              // enum
         private String animeTitle;
+        private String animePosterUrl;
 
         private String title;
         private String description;
@@ -79,6 +80,7 @@ public class GoodsResponseDto {
         private Integer instantBuyPrice;
         private AuctionStatus auctionStatus;    // enum
 
+        private Integer duration;
         private LocalDateTime createdAt;
         private LocalDateTime auctionEndAt;
         private int wishCount;
