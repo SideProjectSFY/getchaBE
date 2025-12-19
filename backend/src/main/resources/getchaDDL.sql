@@ -146,3 +146,18 @@ CREATE TABLE `anime_genre` (
                                CONSTRAINT `PK_ANIME_GENRE` PRIMARY KEY (`tmdb_genre_id`, `anime_id`)
 );
 
+
+CREATE TABLE payment (
+                         id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+                         user_id       BIGINT NOT NULL,
+                         merchant_uid  VARCHAR(64) NOT NULL,
+                         imp_uid       VARCHAR(64) NULL,
+                         amount        INT NOT NULL,
+                         status        ENUM('READY','PAID','FAILED') NOT NULL DEFAULT 'READY',
+                         fail_reason   VARCHAR(255) NULL,
+                         paid_at       TIMESTAMP NULL,
+                         created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                         updated_at    TIMESTAMP NULL,
+                         CONSTRAINT uq_payment_merchant UNIQUE (merchant_uid)
+);
+
