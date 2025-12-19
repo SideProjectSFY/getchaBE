@@ -15,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -208,24 +210,27 @@ public class GoodsServiceImpl implements GoodsService {
         *  이미지 리스트 수정
         * */
 
+        // afterCommit 에서 사용할 삭제 대상 파일 목록
+        List<GoodsImage> deleteImages = new ArrayList<>();
+
         // 1. 삭제 요청된 이미지 삭제 (DB + 실제 파일 Hard 삭제)
         List<Long> deleteImageIds = goodsModify.getDeleteImageIds();
         if (deleteImageIds != null && !deleteImageIds.isEmpty()) {
-            List<GoodsImage> deleteImages = goodsMapper.selectDeleteImageFileByFileId(deleteImageIds);
 
-            // 실제 로컬에서 파일 삭제 (용량 문제로 hard 삭제처리)
-            for (GoodsImage img : deleteImages) {
-                fileServie.deleteFile(img.getStoredFilename());
-            }
+            //실제로 삭제할 대상 파일을 담아두기 (아직 파일 삭제 안됨)
+            deleteImages = goodsMapper.selectDeleteImageFileByFileId(deleteImageIds);
 
             // DB 에서 파일 row 삭제
             int deleteImageFile = goodsMapper.deleteGoodsImageByFileId(deleteImageIds);
+
             if(deleteImageFile < 1) throw new CustomException("이미지 삭제에 실패하였습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         // 2. 유지되는 기존 이미지들의 sort_order 업데이트
         if (goodsModify.getExistingImages() != null && !goodsModify.getExistingImages().isEmpty()) {
+
             int updateImageSortOrder = goodsMapper.updateImageSortOrder(goodsId, goodsModify.getExistingImages());
+
             if(updateImageSortOrder < 1)
                 throw new CustomException("기존 이미지 순서 업데이트에 실패하였습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -253,6 +258,22 @@ public class GoodsServiceImpl implements GoodsService {
                 // DB 저장
                 goodsMapper.insertFiles(imageFile);
             }
+        }
+
+        // 트랜잭션 성공 후에만 실제 파일 삭제 !!
+        if(!deleteImages.isEmpty()) {
+            List<GoodsImage> finalDeleteImages = deleteImages;
+
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronizationAdapter() {
+                        @Override
+                        public void afterCommit() {
+                            for (GoodsImage img : finalDeleteImages) {
+                                fileServie.deleteFile(img.getStoredFilename());
+                            }
+                        }
+                    }
+            );
         }
 
     }
