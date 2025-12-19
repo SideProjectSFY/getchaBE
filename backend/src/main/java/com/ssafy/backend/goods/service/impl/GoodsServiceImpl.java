@@ -10,6 +10,7 @@ import com.ssafy.backend.wish.model.WishMapper;
 import com.ssafy.backend.wish.model.WishResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,8 @@ public class GoodsServiceImpl implements GoodsService {
     private static final int LIMIT_AMOUNT = 5_000_000;
 
     // 실제 서버 디렉토리명 숨기기 위해 가상 파일명으로 변경
-    private final String webPath = "/images";
+    @Value("${file.upload.web-path}")
+    private String webPath;
 
 
     @Override
