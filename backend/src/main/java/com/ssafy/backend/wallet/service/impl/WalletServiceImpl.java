@@ -148,4 +148,38 @@ public class WalletServiceImpl implements WalletService {
         }
     }
 
+
+    @Override
+    @Transactional
+    public int chargeByPayment(Long loginUserId, int amount, String merchantUid) {
+        // 금액/지갑 검증
+        validateChargeAmount(amount);
+        ensureWalletExists(loginUserId);
+
+        // balance 증가
+        int updated = walletMapper.chargeCoin(loginUserId, amount);
+        if(updated < 1) {
+            throw new CustomException("결제 충전에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        // wallet_history 기록
+        WalletRequestDto.ChargeWalletHistory history = WalletRequestDto.ChargeWalletHistory.builder()
+                    .userId(loginUserId)
+                    .transactionType(TransactionType.CHARGE)
+                    .amount(amount)
+                    .description("골드 충전 성공")
+                    .build();
+        int historyResult = walletMapper.insertChargeWalletHistory(history);
+        if(historyResult < 1) {
+            throw new CustomException("거래 내역 기록에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        // 충전 후 잔액 조회, 반환
+        WalletResponseDto.CoinWalletStatus wallet = walletMapper.selectCoinWallet(loginUserId);
+        if(wallet == null) {
+            throw new CustomException("지갑 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        return wallet.getBalance();
+    }
 }

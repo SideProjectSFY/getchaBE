@@ -35,4 +35,13 @@ public interface WalletService {
      * @param chargeCoinAmount 충전할 돈(코인)
      */
     Integer chargeCoin(Long loginUserId, WalletRequestDto.ChargeCoinAmount chargeCoinAmount);
+
+    /**
+     * 결제 완료 (PAID) 이후 충전
+     * @param loginUserId 로그인 사용자ID
+     * @param amount 충전 금액
+     * @param merchantUid 결제 고유 ID
+     * @return 충전 후 wallet balance
+     */
+    int chargeByPayment(Long loginUserId, int amount, String merchantUid);
 }
