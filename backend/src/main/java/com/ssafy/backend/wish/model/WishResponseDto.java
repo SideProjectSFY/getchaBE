@@ -20,6 +20,7 @@ public class WishResponseDto {
     @AllArgsConstructor
     public static class AddWishResult {
         private Long wishId;
+        private int wishCount;
         private boolean checkWish;
     }
 
@@ -29,6 +30,7 @@ public class WishResponseDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class DeleteWishResult {
+        private int wishCount;
         private boolean checkWish;
     }
 
@@ -61,6 +63,7 @@ public class WishResponseDto {
         private Long sellerId;
         private String sellerNickname;          // 판매자닉네임
         private int wishCount;                  // 찜 수
+        private boolean checkWish;              // 로그인한 사용자가 찜했는지 아닌지 체크
         private Category category;
         private String mainFilePath;            // 굿즈대표이미지
         private String title;                   // 굿즈 글의 제목
