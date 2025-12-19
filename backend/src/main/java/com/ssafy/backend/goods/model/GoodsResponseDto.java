@@ -111,7 +111,6 @@ public class GoodsResponseDto {
     public static class BidParticipant {
 
         private Integer bidRank;
-        private Long bidId;
         private Long bidderId;
         private String bidderNickName;
         private String bidderProfileFilePath;
