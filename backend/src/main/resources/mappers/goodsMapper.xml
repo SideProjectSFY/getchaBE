@@ -136,7 +136,7 @@
         ORDER BY
             <choose>
                 <when test="goodsLookUp.sort.equals('price')">
-                    currentBidAmount DESC
+                    COALESCE(MAX(b.bid_amount), g.start_price) DESC
                 </when>
                 <when test="goodsLookUp.sort.equals('wish')">
                     wishCount DESC
@@ -181,15 +181,17 @@
             anime_id,
             seller_id,
             u.nickname AS sellerNickName,
-            ta.poster_url AS sellerProfileFilePath,
+            (select userTa.poster_url from tmdb_anime userTa where u.liked_anime_id1 = userTa.id) AS sellerProfileFilePath,
             category,
             ta.title AS animeTitle,
+            ta.poster_url AS animePosterUrl,
             g.title,
             description,
             start_price,
             b.bid_amount AS currentBidAmount,
             instant_buy_price,
             auction_status,
+            g.duration,
             g.created_at,
             auction_end_at,
             (
@@ -208,7 +210,7 @@
             INNER JOIN user u
                 ON u.id = g.seller_id
             LEFT JOIN tmdb_anime ta
-                ON ta.id = g.anime_id and ta.id = u.liked_anime_id1
+                ON ta.id = g.anime_id
             LEFT JOIN bid b
             ON b.goods_id = g.id AND b.is_highest IS TRUE
         WHERE g.id = #{goodsId}
@@ -218,21 +220,27 @@
     <!-- 경매에 입찰한 참여자 리스트 조회 -->
     <select id="selectBidParticipantByGoodsId" parameterType="Long" resultType="com.ssafy.backend.goods.model.GoodsResponseDto$BidParticipant">
         SELECT
-            DENSE_RANK() OVER (ORDER BY bid_amount DESC) AS bidRank,
-            b.id AS bidId,
+            DENSE_RANK() OVER (ORDER BY max_bid_amount DESC) AS bidRank,
             bidder_id,
             u.nickname AS bidderNickName,
             ta.poster_url AS bidderProfileFilePath,
-            bid_amount,
+            max_bid_amount AS bidAmount,
             is_highest
-        FROM bid b
+        FROM (
+            SELECT
+                bidder_id,
+                MAX(bid_amount) AS max_bid_amount,
+                MAX(is_highest) AS is_highest
+            FROM bid
+            WHERE goods_id = #{goodsId}
+            GROUP BY bidder_id
+        ) b
             LEFT JOIN user u
                 ON b.bidder_id = u.id
                 AND u.deleted_at IS NULL
             LEFT JOIN tmdb_anime ta
                 ON ta.id = u.liked_anime_id1
-        WHERE goods_id = #{goodsId}
-        ORDER BY bid_amount DESC;
+        ORDER BY bidRank
     </select>
 
     <!-- 특정 굿즈 글의 다중 이미지 리스트 조회 -->
@@ -360,12 +368,14 @@
 
     <!--  기존 이미지 sort_order 업데이트 -->
     <update id="updateImageSortOrder">
-        <foreach collection="images" item="img" separator=";">
-            UPDATE goods_image
-            SET sort_order = #{img.sortOrder}
-            WHERE id = #{img.imageId}
-            AND goods_id = #{goodsId}
+        UPDATE goods_image
+        SET sort_order = CASE id
+        <foreach collection="images" item="img">
+            WHEN #{img.imageId} THEN #{img.sortOrder}
         </foreach>
+            ELSE sort_order
+        END
+        WHERE goods_id = #{goodsId}
     </update>
 
     <!-- 신규 이미지 next sort_order 조회 -->
