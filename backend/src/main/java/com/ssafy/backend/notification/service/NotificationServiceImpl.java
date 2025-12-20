@@ -2,6 +2,7 @@ package com.ssafy.backend.notification.service;
 
 import com.ssafy.backend.common.enums.NotificationType;
 import com.ssafy.backend.notification.model.Notification;
+import com.ssafy.backend.notification.model.NotificationCursorResponseDto;
 import com.ssafy.backend.notification.model.NotificationMapper;
 import com.ssafy.backend.notification.model.NotificationResponseDto;
 import lombok.RequiredArgsConstructor;
@@ -9,12 +10,16 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
+
+    // 알림 페이징 처리는 5개씩
+    private static final int NOTIFICATION_PAGE_SIZE = 5;
 
     private final NotificationMapper notificationMapper;
     private final LongPollingManager longPollingManager;
@@ -160,5 +165,32 @@ public class NotificationServiceImpl implements NotificationService {
                 notificationMapper.findEndingInFiveMinutes(),
                 NotificationType.AUCTION_ENDING_SOON
         );
+    }
+
+    //5. 읽지 않은 알림 + 페이징 처리
+    @Override
+    public NotificationCursorResponseDto getUnreadNotificationList(Long userId, Long cursorId){
+
+        List<Notification> fetched = notificationMapper.findUnreadByCursor(userId, cursorId, NOTIFICATION_PAGE_SIZE + 1);
+
+        boolean hasMore = fetched.size() > NOTIFICATION_PAGE_SIZE;
+
+        // 알림 5개까지만 (혹은 미만)
+        List<Notification> page = hasMore ? fetched.subList(0, NOTIFICATION_PAGE_SIZE) : fetched;
+
+        List<NotificationResponseDto> items = new ArrayList<>();
+
+        for (Notification notification : page){
+            items.add(NotificationResponseDto.from(notification));
+        }
+
+        // 다음의 시작점
+        Long nextCursorId = page.isEmpty() ? null : page.get(page.size() - 1).getId();
+
+        return NotificationCursorResponseDto.builder()
+                .items(items)
+                .nextCursorId(nextCursorId)
+                .hasMore(hasMore)
+                .build();
     }
 }

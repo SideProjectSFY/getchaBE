@@ -32,4 +32,11 @@ public interface NotificationMapper {
 
     // 경매의 입찰자 목록
     List<Long> findBiddersByGoodsId(@Param("goodsId") Long goodsId);
+
+    // 안읽은 알림 페이징 처리
+    List<Notification> findUnreadByCursor(
+            @Param("userId") Long userId,
+            @Param("cursorId") Long cursorId,
+            @Param("fetchSize") int fetchSize
+    );
 }

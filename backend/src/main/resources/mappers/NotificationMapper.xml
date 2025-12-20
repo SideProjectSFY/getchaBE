@@ -6,12 +6,12 @@
 <mapper namespace="com.ssafy.backend.notification.model.NotificationMapper">
     <!-- 1. 읽지 않은 알림 목록 조회 -->
     <select id="findUnreadByUserId" parameterType="long" resultType="com.ssafy.backend.notification.model.Notification">
-        SELECT *
-        FROM notification
-        WHERE user_id = #{userId}
-            AND read_at IS NULL
-        ORDER BY created_at DESC
-    </select>
+    SELECT *
+    FROM notification
+    WHERE user_id = #{userId}
+      AND read_at IS NULL
+    ORDER BY created_at DESC
+</select>
 
     <!-- 2. 알림 insert -->
     <insert id="insertNotification"
@@ -94,6 +94,19 @@
         SELECT DISTINCT bidder_id
         FROM bid
         WHERE goods_id = #{goodsId}
+    </select>
+
+    <!-- 안읽은 알림 페이징 처리 -->
+    <select id="findUnreadByCursor" resultType="com.ssafy.backend.notification.model.Notification">
+        SELECT *
+        FROM notification
+        WHERE user_id = #{userId}
+            AND read_at IS NULL
+        <if test="cursorId != null">
+            AND id &lt; #{cursorId}
+        </if>
+        ORDER BY id DESC
+        LIMIT #{fetchSize}
     </select>
 </mapper>
 

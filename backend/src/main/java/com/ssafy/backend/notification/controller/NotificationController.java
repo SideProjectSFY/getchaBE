@@ -1,6 +1,7 @@
 package com.ssafy.backend.notification.controller;
 
 import com.ssafy.backend.auth.service.jwt.JwtTokenProvider;
+import com.ssafy.backend.notification.model.NotificationCursorResponseDto;
 import com.ssafy.backend.notification.model.NotificationRequestDto;
 import com.ssafy.backend.notification.model.NotificationResponseDto;
 import com.ssafy.backend.notification.service.LongPollingManager;
@@ -25,7 +26,7 @@ public class NotificationController {
     private final NotificationService notificationService;
     private final LongPollingManager longPollingManager;
 
-    // 1. 읽지 않은 알림 목록 조회
+    // 1. 읽지 않은 알림 목록 조회 (Long Polling 조회용)
     @GetMapping("")
     @Operation(summary = "읽지 않은 알림 목록 조회")
     public ResponseEntity<List<NotificationResponseDto>> getUnreadNoti(
@@ -34,15 +35,15 @@ public class NotificationController {
         return ResponseEntity.ok(notificationService.getUnreadNotifications(userId));
     }
 
-    // 2. 알림 생성
-    @PostMapping("")
-    @Operation(summary = "알림 생성 (테스트)")
-    public ResponseEntity<NotificationResponseDto> createNotification(
-            @RequestBody NotificationRequestDto dto,
-            @AuthenticationPrincipal Long userId
-    ) {
-        return ResponseEntity.ok(notificationService.createNotification(userId, dto.getType(), dto.getVars(), dto.getGoodsId()));
-    }
+//    // 2. 알림 생성 (swagger 테스트용)
+//    @PostMapping("")
+//    @Operation(summary = "알림 생성 (테스트)")
+//    public ResponseEntity<NotificationResponseDto> createNotification(
+//            @RequestBody NotificationRequestDto dto,
+//            @AuthenticationPrincipal Long userId
+//    ) {
+//        return ResponseEntity.ok(notificationService.createNotification(userId, dto.getType(), dto.getVars(), dto.getGoodsId()));
+//    }
 
     // 3. 알림 단 건 읽음 처리
     @PatchMapping("/{notificationId}")
@@ -92,5 +93,14 @@ public class NotificationController {
 
         longPollingManager.addWaiter(userId, result);
         return result;
+    }
+
+    @GetMapping("/list")
+    @Operation(summary = "안 읽은 알림 목록 조회 (5개씩, 가장 최신의 알림 확인을 원할 경우 cursorId 미입력)")
+    public ResponseEntity<NotificationCursorResponseDto> getUnreadNotificationList(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam(required = false) Long cursorId
+    ) {
+        return ResponseEntity.ok(notificationService.getUnreadNotificationList(userId, cursorId));
     }
 }
