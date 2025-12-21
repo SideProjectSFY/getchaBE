@@ -130,7 +130,10 @@ public class NotificationServiceImpl implements NotificationService {
                     goodsId
             );
 
-            // 입찰자 알림
+            // 경매 시작이면 판매자한테만 알림 가도록
+            if(type == NotificationType.AUCTION_STARTED) continue;
+
+            // 구매자 알림
             List<Long> bidderIds = notificationMapper.findBiddersByGoodsId(goodsId);
             for (Long bidderId : bidderIds) {
                 createNotification(
