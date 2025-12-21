@@ -1,6 +1,7 @@
 package com.ssafy.backend.notification.service;
 
 import com.ssafy.backend.common.enums.NotificationType;
+import com.ssafy.backend.notification.model.NotificationCursorResponseDto;
 import com.ssafy.backend.notification.model.NotificationResponseDto;
 
 import java.util.List;
@@ -18,4 +19,7 @@ public interface NotificationService {
 
     //4. 알림 전체 읽음 처리
     void markAllAsRead(Long userId);
+
+    //5. 읽지 않은 알림 + 페이징 처리
+    NotificationCursorResponseDto getUnreadNotificationList(Long userId, Long cursorId);
 }
