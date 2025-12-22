@@ -180,4 +180,17 @@ public interface GoodsMapper {
             @Param("userId") Long userId,
             @Param("limit") int limit
     );
+
+
+    /**
+     * AI 추천 결과 : goodsId 목록으로 GoodsCard(이미지 포함) 조회
+     * @param goodsIds 추천된 굿즈 ID 목록
+     * @param userId 로그인한 유저 ID
+     * @return GoodsCard 리스트
+     */
+    List<GoodsResponseDto.GoodsCard> selectGoodsCardsByIds(
+            @Param("goodsIds") List<Long> goodsIds,
+            @Param("userId") Long userId
+    );
+
 }

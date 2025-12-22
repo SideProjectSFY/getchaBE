@@ -5,6 +5,7 @@ import com.ssafy.backend.anime.model.AnimeMapper;
 import com.ssafy.backend.anime.model.TmdbAnimeEntityDto;
 import com.ssafy.backend.goods.model.Goods;
 import com.ssafy.backend.goods.model.GoodsMapper;
+import com.ssafy.backend.goods.model.GoodsResponseDto;
 import com.ssafy.backend.user.model.User;
 import com.ssafy.backend.user.model.UserMapper;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -28,7 +30,8 @@ public class RecommendationService {
 
     /*
      * AI 기반 애니메이션 추천
-     * 유저가 선택한 선호 애니 1~3번을 기반으로 가중 평균 임베딩을 만든 뒤 Pinecone에서 유사 애니를 조회
+     * 유저가 선택한 선호 애니 1~3번을 기반으로
+     * 가중 평균 임베딩을 만든 뒤 Pinecone에서 유사 애니를 조회
      */
     public List<TmdbAnimeEntityDto> recommend(Long userId) throws IOException {
 
@@ -66,7 +69,7 @@ public class RecommendationService {
         List<String> ids =
                 embeddingService.querySimilarAnime(userVector, 7);
 
-        // 이미 관심 애니로 등록해 놓은 애니는 추천에서 제외
+        // 이미 관심 애니로 등록된 애니는 제외
         Set<Long> likedIds = new java.util.HashSet<>();
         if (user.getLikedAnimeId1() != null) likedIds.add(user.getLikedAnimeId1());
         if (user.getLikedAnimeId2() != null) likedIds.add(user.getLikedAnimeId2());
@@ -79,6 +82,16 @@ public class RecommendationService {
                 .toList();
 
         return animeMapper.findByIds(animeIds);
+    }
+
+    /*
+     * Controller에서 호출하는 메인 추천 메서드
+     * 내부적으로 AI 추천 + fallback + 정렬 로직을 수행한 뒤
+     * GoodsCard 형태로 반환
+     */
+    public List<GoodsResponseDto.GoodsCard> recommendGoods(Long userId) throws IOException {
+        User user = userMapper.findById(userId);
+        return recommendGoodsInternal(user);
     }
 
     /*
@@ -109,11 +122,6 @@ public class RecommendationService {
         );
     }
 
-    /*
-     * AI 추천 굿즈 + 정확도(matchRate) 계산
-     * 유저 벡터와 굿즈 애니 벡터 비교
-     * 코사인 유사도 기반 정확도 산출
-     */
     /*
      * AI 추천 굿즈 + 정확도(matchRate) 계산
      * 유저 벡터와 굿즈 애니 벡터 비교
@@ -183,7 +191,6 @@ public class RecommendationService {
                     );
 
                     result.add(new RecommendedGoodsDto(goods, matchRate, false));
-
                 } catch (Exception e) {
                     log.warn("[FALLBACK] 임베딩 없음 → skip. animeId={}", goods.getAnimeId());
                 }
@@ -191,6 +198,72 @@ public class RecommendationService {
         }
 
         return result;
+    }
+
+    /*
+     * 내부 추천 로직
+     * AI 추천 애니 기반 굿즈를 우선 조회하고
+     * 부족할 경우 인기 굿즈로 보완
+     * 마감 임박 가중치를 포함하여 정렬
+     */
+    private List<GoodsResponseDto.GoodsCard> recommendGoodsInternal(User user) throws IOException {
+
+        Long userId = user.getId();
+
+        List<TmdbAnimeEntityDto> animeList = recommend(userId);
+        List<Long> animeIds = animeList.stream()
+                .map(TmdbAnimeEntityDto::getId)
+                .toList();
+
+        List<Goods> result = new ArrayList<>();
+
+        if (!animeIds.isEmpty()) {
+            List<Goods> aiGoods =
+                    goodsMapper.selectOngoingGoodsByAnimeIdsExcludeSellerAndWish(
+                            animeIds, userId, userId
+                    );
+
+            result.addAll(
+                    aiGoods.stream()
+                            .sorted((g1, g2) -> {
+
+                                double score1 = (animeIds.size() - animeIds.indexOf(g1.getAnimeId()));
+                                double score2 = (animeIds.size() - animeIds.indexOf(g2.getAnimeId()));
+
+                                score1 += urgencyBoost(g1.getAuctionEndAt());
+                                score2 += urgencyBoost(g2.getAuctionEndAt());
+
+                                return Double.compare(score2, score1);
+                            })
+                            .limit(5)
+                            .toList()
+            );
+        }
+
+        if (result.size() < 5) {
+            int need = 5 - result.size();
+
+            List<Long> alreadyAddedIds = result.stream()
+                    .map(Goods::getId)
+                    .toList();
+
+            List<Goods> fallback =
+                    goodsMapper.selectPopularOngoingGoodsExcludeSellerAndWish(
+                            userId, userId, need
+                    );
+
+            fallback.stream()
+                    .filter(g -> !alreadyAddedIds.contains(g.getId()))
+                    .forEach(result::add);
+        }
+
+        if (result.isEmpty()) return List.of();
+
+        List<Long> goodsIds = result.stream()
+                .map(Goods::getId)
+                .toList();
+
+        return goodsMapper.selectGoodsCardsByIds(goodsIds, userId);
     }
 
     /*
@@ -229,4 +302,3 @@ public class RecommendationService {
         return 0.0;
     }
 }
-
