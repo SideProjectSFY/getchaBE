@@ -399,7 +399,7 @@
         thumbnail_url,
         anime_id
         FROM goods
-        WHERE status = 'ONGOING'
+        WHERE status IN('WAIT','PROCEEDING')
         AND anime_id IN
         <foreach collection="animeIds" item="id" open="(" close=")" separator=",">
             #{id}
@@ -420,7 +420,7 @@
         created_at,
         anime_id
         FROM goods
-        WHERE auction_status = 'ONGOING'
+        WHERE auction_status IN('WAIT','PROCEEDING')
         AND seller_id != #{sellerId}
         AND anime_id IN
         <foreach collection="animeIds" item="id" open="(" close=")" separator=",">
@@ -442,7 +442,7 @@
         g.created_at,
         g.anime_id
         FROM goods g
-        WHERE g.auction_status = 'ONGOING'
+        WHERE g.auction_status IN('WAIT','PROCEEDING')
         AND g.seller_id != #{sellerId}
         AND g.anime_id IN
         <foreach collection="animeIds" item="id" open="(" close=")" separator=",">
@@ -471,7 +471,7 @@
         g.anime_id
         FROM goods g
         LEFT JOIN wishlist w ON g.id = w.goods_id
-        WHERE g.auction_status = 'ONGOING'
+        WHERE g.auction_status IN('WAIT','PROCEEDING')
         AND g.seller_id != #{sellerId}
         AND NOT EXISTS (
         SELECT 1
