@@ -254,4 +254,65 @@ public class AnimeServiceImpl implements AnimeService {
         }
         return trimmed;
     }
+
+    public void bulkSyncAnimeFromTmdb(int maxPage) {
+
+        for (int page = 1; page <= maxPage; page++) {
+
+            String url = tmdbUrl
+                    + "&with_genres=16"
+                    + "&page=" + page
+                    + "&language=ko-KR"
+                    + "&api_key=" + apiKey;
+
+            String response = restTemplate.getForObject(url, String.class);
+            if (response == null) break;
+
+            JsonNode results = parse(response).path("results");
+            if (!results.isArray() || results.isEmpty()) break;
+
+            for (JsonNode node : results) {
+
+                long tmdbId = node.path("id").asLong();
+
+                // 상세 정보 (제목, 줄거리, 평점 등을 위해)
+                JsonNode detail = searchDetail(tmdbId);
+
+                // ✅ 핵심: detail이 아닌 node의 genre_ids 사용!
+                JsonNode genreIdsNode = node.path("genre_ids");
+                List<Integer> genreIds = new ArrayList<>();
+                if(genreIdsNode.isArray()){
+                    for(JsonNode genre : genreIdsNode){
+                        int gid = genre.asInt();
+                        if (gid != 16) {
+                            genreIds.add(gid);
+                        }
+                    }
+                }
+
+                TmdbAnimeEntityDto anime = TmdbAnimeEntityDto.builder()
+                        .id(tmdbId)
+                        .title(resolveTitle(detail))
+                        .posterUrl(resolvePosterUrl(node, detail))
+                        .overview(resolveOverview(node, detail))
+                        .voteAverage(detail.path("vote_average").asDouble())
+                        .voteCount(detail.path("vote_count").asLong())
+                        .popularity(detail.path("popularity").asDouble())
+                        .genreIds(genreIds)
+                        .build();
+
+                animeMapper.insertAnime(anime);
+
+                for (Integer gid : genreIds) {
+                    animeMapper.insertAnimeGenre(anime.getId(), gid);
+                }
+
+                // ✅ 추가: 각 작품마다 딜레이 (Rate limit 방지)
+                try { Thread.sleep(100); } catch (InterruptedException ignored) {}
+            }
+
+            // 페이지 간 딜레이
+            try { Thread.sleep(300); } catch (InterruptedException ignored) {}
+        }
+    }
 }

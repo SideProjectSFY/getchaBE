@@ -385,4 +385,103 @@
         WHERE goods_id = #{goodsId}
     </select>
 
+
+    <!-- AI -->
+    <select id="selectOngoingGoodsByAnimeIds"
+            parameterType="list"
+            resultType="com.ssafy.backend.goods.model.Goods">
+
+        SELECT
+        id,
+        title,
+        current_price,
+        auction_end_at,
+        thumbnail_url,
+        anime_id
+        FROM goods
+        WHERE status = 'ONGOING'
+        AND anime_id IN
+        <foreach collection="animeIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="selectOngoingGoodsByAnimeIdsExcludeSeller"
+            resultType="com.ssafy.backend.goods.model.Goods">
+
+        SELECT
+        id,
+        seller_id,
+        title,
+        category,
+        start_price,
+        auction_status,
+        auction_end_at,
+        created_at,
+        anime_id
+        FROM goods
+        WHERE auction_status = 'ONGOING'
+        AND seller_id != #{sellerId}
+        AND anime_id IN
+        <foreach collection="animeIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="selectOngoingGoodsByAnimeIdsExcludeSellerAndWish"
+            resultType="com.ssafy.backend.goods.model.Goods">
+
+        SELECT
+        g.id,
+        g.seller_id,
+        g.title,
+        g.category,
+        g.start_price,
+        g.auction_status,
+        g.auction_end_at,
+        g.created_at,
+        g.anime_id
+        FROM goods g
+        WHERE g.auction_status = 'ONGOING'
+        AND g.seller_id != #{sellerId}
+        AND g.anime_id IN
+        <foreach collection="animeIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        AND NOT EXISTS (
+        SELECT 1
+        FROM wishlist w
+        WHERE w.goods_id = g.id
+        AND w.user_id = #{userId}
+        )
+    </select>
+
+    <select id="selectPopularOngoingGoodsExcludeSellerAndWish"
+            resultType="com.ssafy.backend.goods.model.Goods">
+
+        SELECT
+        g.id,
+        g.seller_id,
+        g.title,
+        g.category,
+        g.start_price,
+        g.auction_status,
+        g.auction_end_at,
+        g.created_at,
+        g.anime_id
+        FROM goods g
+        LEFT JOIN wishlist w ON g.id = w.goods_id
+        WHERE g.auction_status = 'ONGOING'
+        AND g.seller_id != #{sellerId}
+        AND NOT EXISTS (
+        SELECT 1
+        FROM wishlist w2
+        WHERE w2.goods_id = g.id
+        AND w2.user_id = #{userId}
+        )
+        GROUP BY g.id
+        ORDER BY COUNT(w.id) DESC, g.created_at DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

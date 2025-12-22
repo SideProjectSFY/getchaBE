@@ -145,4 +145,39 @@ public interface GoodsMapper {
      * @return 판매자Id(pk)
      */
     Long selectSellerIdByGoodsId(Long goodsId);
+
+    /**
+     * AI 추천용: 특정 애니 ID 목록에 해당하는 진행 중 굿즈 조회
+     */
+    List<Goods> selectOngoingGoodsByAnimeIds(
+            @Param("animeIds") List<Long> animeIds
+    );
+
+    /**
+     * AI 추천용: 추천 애니 기반 진행 중 굿즈 조회 (내가 등록한 굿즈 제외)
+     */
+    List<Goods> selectOngoingGoodsByAnimeIdsExcludeSeller(
+            @Param("animeIds") List<Long> animeIds,
+            @Param("sellerId") Long sellerId
+    );
+
+    /**
+     * AI 추천용: 추천 애니 기반 진행 중 굿즈 조회
+     * - 내가 등록한 굿즈 제외
+     * - 이미 찜한 굿즈 제외
+     */
+    List<Goods> selectOngoingGoodsByAnimeIdsExcludeSellerAndWish(
+            @Param("animeIds") List<Long> animeIds,
+            @Param("sellerId") Long sellerId,
+            @Param("userId") Long userId
+    );
+
+    /**
+     * AI 추천 부족 시 fallback: 인기 굿즈 조회
+     */
+    List<Goods> selectPopularOngoingGoodsExcludeSellerAndWish(
+            @Param("sellerId") Long sellerId,
+            @Param("userId") Long userId,
+            @Param("limit") int limit
+    );
 }
