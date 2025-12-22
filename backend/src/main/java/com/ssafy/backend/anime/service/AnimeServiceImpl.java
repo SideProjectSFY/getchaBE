@@ -37,6 +37,9 @@ public class AnimeServiceImpl implements AnimeService {
     @Value("${tmdb.base-url}")
     private String tmdbUrl;
 
+    @Value(("${tmdb.discover-url}"))
+    private String discoverUrl;
+
     // tmdb poster_path 는 상대경로라서 앞에 붙여주기 !
     @Value("${tmdb.image-base-url:https://image.tmdb.org/t/p/w500}")
     private String posterBaseUrl;
@@ -259,8 +262,8 @@ public class AnimeServiceImpl implements AnimeService {
 
         for (int page = 1; page <= maxPage; page++) {
 
-            String url = tmdbUrl
-                    + "&with_genres=16"
+            String url = discoverUrl
+                    + "?with_genres=16"
                     + "&page=" + page
                     + "&language=ko-KR"
                     + "&api_key=" + apiKey;

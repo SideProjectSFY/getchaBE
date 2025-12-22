@@ -1,6 +1,7 @@
 package com.ssafy.backend.ai.controller;
 
 import com.ssafy.backend.ai.service.EmbeddingService;
+import com.ssafy.backend.anime.service.AnimeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -10,10 +11,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class EmbeddingController {
 
     private final EmbeddingService embeddingService;
+    private final AnimeService animeService;
 
-    @PostMapping("/api/embedding/generate")
+    @PostMapping("/embedding/generate")
     public String generate() {
-        embeddingService.generateEmbeddingsForAllAnime(); //전체 애니 임베딩 생성
+        embeddingService.generateEmbeddingsForAllAnime();
         return "Embedding generation completed!";
     }
+
+    @PostMapping("/embedding/bulk")
+    public String animeBulk() {
+        animeService.bulkSyncAnimeFromTmdb(200);
+        return "애니메이션 적재 완료!";
+    }
 }
+
