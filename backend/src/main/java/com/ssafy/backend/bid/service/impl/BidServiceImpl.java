@@ -382,7 +382,7 @@ public  class BidServiceImpl implements BidService {
                 amount,
                 TransactionType.BIDUNLOCK,
                 TransactionType.BIDUNLOCK,
-                "환불"
+                "예치금 환불"
         );
     }
 

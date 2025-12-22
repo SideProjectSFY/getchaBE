@@ -81,7 +81,7 @@
             #{goodsId},
             #{transactionType},
             #{amount},
-            CONCAT((select title from goods where id = #{goodsId}), ' ', #{description})
+            CONCAT('<![CDATA[<]]> ',(select title from goods where id = #{goodsId}), ' > ', #{description})
         );
     </insert>
 
