@@ -26,7 +26,6 @@ public class RecommendationController {
     public List<GoodsResponseDto.GoodsCard> recommendGoods(
             @AuthenticationPrincipal Long userId
     ) throws IOException {
-
         return recommendationService.recommendGoods(userId);
     }
 
