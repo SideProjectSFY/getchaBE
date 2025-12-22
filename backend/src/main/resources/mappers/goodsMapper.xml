@@ -484,4 +484,45 @@
         LIMIT #{limit}
     </select>
 
+    <!-- AI 추천 결과 : goodsId 목록으로 GoodsCard(이미지 포함) 조회 -->
+    <select id="selectGoodsCardsByIds" parameterType="list" resultType="com.ssafy.backend.goods.model.GoodsResponseDto$GoodsCard">
+        SELECT
+            g.id AS goodsId,
+            g.seller_id AS sellerId,
+            g.category,
+            g.title,
+            g.start_price AS startPrice,
+            g.auction_status AS auctionStatus,
+            g.auction_end_at AS auctionEndAt,
+            g.created_at AS createdAt,
+
+            MAX(image.file_path) AS mainFilePath,
+            MAX(tmdb.title) AS animeTitle,
+            MAX(bid.bid_amount) AS currentBidAmount,
+
+            COUNT(wish.id) AS wishCount,
+            0 AS checkWish <!-- ai 추천 굿즈는 내가 좋아요 한 굿즈를 애초에 제외하기 때문에 걍 0 처리 -->
+
+        FROM goods g
+            LEFT JOIN goods_image image
+                ON image.goods_id = g.id
+                AND image.sort_order = 1
+
+            LEFT JOIN tmdb_anime tmdb
+                ON tmdb.id = g.anime_id
+
+            LEFT JOIN bid
+                ON bid.goods_id = g.id
+                AND bid.is_highest = TRUE
+
+            LEFT JOIN wishlist wish
+                ON wish.goods_id = g.id
+
+        WHERE g.id IN
+            <foreach collection="goodsIds" item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        GROUP BY g.id
+    </select>
+
 </mapper>

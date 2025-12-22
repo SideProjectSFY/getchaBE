@@ -4,6 +4,7 @@ import com.ssafy.backend.anime.model.AnimeMapper;
 import com.ssafy.backend.anime.model.TmdbAnimeEntityDto;
 import com.ssafy.backend.goods.model.Goods;
 import com.ssafy.backend.goods.model.GoodsMapper;
+import com.ssafy.backend.goods.model.GoodsResponseDto;
 import com.ssafy.backend.user.model.User;
 import com.ssafy.backend.user.model.UserMapper;
 import lombok.RequiredArgsConstructor;
@@ -75,7 +76,7 @@ public class RecommendationService {
 
     }
 
-    public List<Goods> recommendGoods(User user) throws IOException {
+    public List<GoodsResponseDto.GoodsCard> recommendGoods(User user) throws IOException {
 
         log.info("recommendGoods user = {}", user);
         log.info("userId = {}", user.getId());
@@ -138,7 +139,19 @@ public class RecommendationService {
                     .forEach(result::add);
         }
 
-        return result;
+        // 이미지를 포함하여 가져오기 위해서 result 타입을 Goods -> GoodsCard로 변환
+        if(result.isEmpty()){
+            return List.of();
+        }
+
+        List<Long> goodsIds = new ArrayList<>(result.size());
+        for(Goods goods : result){
+            goodsIds.add(goods.getId());
+        }
+
+        List<GoodsResponseDto.GoodsCard> cards = goodsMapper.selectGoodsCardsByIds(goodsIds, userId);
+
+        return cards;
     }
 
     // 경매 종료 시간이 가까울수록 가중치 부여
@@ -162,7 +175,7 @@ public class RecommendationService {
         return 0.0;
     }
 
-    public List<Goods> recommendGoods(Long userId) throws IOException {
+    public List<GoodsResponseDto.GoodsCard> recommendGoods(Long userId) throws IOException {
         User user = userMapper.findById(userId);
         return recommendGoods(user);
     }
