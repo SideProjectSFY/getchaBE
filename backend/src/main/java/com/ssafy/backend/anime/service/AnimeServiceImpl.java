@@ -281,7 +281,7 @@ public class AnimeServiceImpl implements AnimeService {
                 // 상세 정보 (제목, 줄거리, 평점 등을 위해)
                 JsonNode detail = searchDetail(tmdbId);
 
-                // ✅ 핵심: detail이 아닌 node의 genre_ids 사용!
+                // 핵심: detail이 아닌 node의 genre_ids 사용!
                 JsonNode genreIdsNode = node.path("genre_ids");
                 List<Integer> genreIds = new ArrayList<>();
                 if(genreIdsNode.isArray()){
@@ -310,7 +310,7 @@ public class AnimeServiceImpl implements AnimeService {
                     animeMapper.insertAnimeGenre(anime.getId(), gid);
                 }
 
-                // ✅ 추가: 각 작품마다 딜레이 (Rate limit 방지)
+                // 추가: 각 작품마다 딜레이 (Rate limit 방지)
                 try { Thread.sleep(100); } catch (InterruptedException ignored) {}
             }
 

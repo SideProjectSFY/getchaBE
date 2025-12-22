@@ -18,11 +18,5 @@ public class EmbeddingController {
         embeddingService.generateEmbeddingsForAllAnime();
         return "Embedding generation completed!";
     }
-
-    @PostMapping("/embedding/bulk")
-    public String animeBulk() {
-        animeService.bulkSyncAnimeFromTmdb(200);
-        return "애니메이션 적재 완료!";
-    }
 }
 

@@ -1,7 +1,9 @@
 package com.ssafy.backend.ai.controller;
 
+import com.ssafy.backend.ai.model.RecommendedGoodsDto;
 import com.ssafy.backend.ai.service.RecommendationService;
 import com.ssafy.backend.anime.model.TmdbAnimeEntityDto;
+import com.ssafy.backend.user.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -22,12 +24,12 @@ public class RecommendationController {
     }
 
     @GetMapping("/goods")
-    public List<?> recommendGoods(
-            @AuthenticationPrincipal Long userId
+    public List<RecommendedGoodsDto> recommendGoods(
+            @AuthenticationPrincipal  Long userId
     ) throws IOException {
-
-        return recommendationService.recommendGoods(userId);
+        return recommendationService.recommendGoodsWithMatch(userId);
     }
+
 
 
 }

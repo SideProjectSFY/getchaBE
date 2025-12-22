@@ -249,14 +249,14 @@ Genres:
                 );
 
                 successCount++;
-                System.out.println("✅ [" + count + "/" + maxCount + "] 저장: " + anime.getTitle());
+                System.out.println(" [" + count + "/" + maxCount + "] 저장: " + anime.getTitle());
 
                 // 큰 모델이라 조금 더 기다림
                 Thread.sleep(3000);
 
             } catch (Exception e) {
                 failCount++;
-                System.err.println("❌ [" + count + "/" + maxCount + "] Error: " + e.getMessage());
+                System.err.println(" [" + count + "/" + maxCount + "] Error: " + e.getMessage());
             }
         }
 
