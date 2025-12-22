@@ -7,6 +7,7 @@ import com.ssafy.backend.goods.model.GoodsMapper;
 import com.ssafy.backend.user.model.User;
 import com.ssafy.backend.user.model.UserMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RecommendationService {
 
     private final UserMapper userMapper;
@@ -25,8 +27,11 @@ public class RecommendationService {
     private final GoodsMapper goodsMapper;
 
     public List<TmdbAnimeEntityDto> recommend(Long userId) throws IOException {
-
         User user = userMapper.findById(userId);
+        log.info("likedAnime1 = {}", user.getLikedAnimeId1());
+        log.info("likedAnime2 = {}", user.getLikedAnimeId2());
+        log.info("likedAnime3 = {}", user.getLikedAnimeId3());
+
 
         List<List<Double>> vectors = new ArrayList<>();
         List<Double> weights = new ArrayList<>();
@@ -46,16 +51,19 @@ public class RecommendationService {
             weights.add(0.2);
         }
 
-        List<Double> userVector = embeddingService.weightedUserEmbedding(vectors, weights);
+        if (vectors.isEmpty()) {
+            return List.of();
+        }
 
+        List<Double> userVector = embeddingService.weightedUserEmbedding(vectors, weights);
         List<String> ids = embeddingService.querySimilarAnime(userVector, 7);
 
         // 유저가 이미 좋아하는 애니 ID Set 제외용
-        Set<Long> likedIds = Set.of(
-                user.getLikedAnimeId1(),
-                user.getLikedAnimeId2(),
-                user.getLikedAnimeId3()
-        );
+        Set<Long> likedIds = new java.util.HashSet<>();
+        if (user.getLikedAnimeId1() != null) likedIds.add(user.getLikedAnimeId1());
+        if (user.getLikedAnimeId2() != null) likedIds.add(user.getLikedAnimeId2());
+        if (user.getLikedAnimeId3() != null) likedIds.add(user.getLikedAnimeId3());
+
 
         List<Long> animeIds = ids.stream()
                 .map(Long::valueOf)
@@ -64,15 +72,23 @@ public class RecommendationService {
                 .toList();
 
         return animeMapper.findByIds(animeIds);
+
     }
 
-    public List<Goods> recommendGoods(Long userId) throws IOException {
+    public List<Goods> recommendGoods(User user) throws IOException {
+
+        log.info("recommendGoods user = {}", user);
+        log.info("userId = {}", user.getId());
 
         // 1. AI 기반 추천
+        Long userId = user.getId();
         List<TmdbAnimeEntityDto> animeList = recommend(userId);
         List<Long> animeIds = animeList.stream()
                 .map(TmdbAnimeEntityDto::getId)
                 .toList();
+
+
+        log.info("animeIds: {}", animeIds);
 
         List<Goods> result = new ArrayList<>();
 
@@ -145,6 +161,12 @@ public class RecommendationService {
         }
         return 0.0;
     }
+
+    public List<Goods> recommendGoods(Long userId) throws IOException {
+        User user = userMapper.findById(userId);
+        return recommendGoods(user);
+    }
+
 
 }
 
