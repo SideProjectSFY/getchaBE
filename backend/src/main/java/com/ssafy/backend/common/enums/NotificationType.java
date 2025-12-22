@@ -14,7 +14,7 @@ public enum NotificationType {
     AUCTION_ENDING_SOON("'{itemName}' 경매 종료 5분 전입니다! 서둘러 확인해보세요.", "/goods?goodsId={goodsId}"),
     AUCTION_BUY_NOW("'{itemName}'이 즉시 구매되었습니다.", "/goods?goodsId={goodsId}"),
     AUCTION_CLOSED("'{itemName}' 경매가 종료 되었습니다.", "/goods?goodsId={goodsId}"),
-    AUCTION_STARTED("'{itemName}' 경매가 시작 되었습니다.", "/goods?goodsId={goodsId}");
+    AUCTION_STARTED("'{itemName}' 경매를 등록하였습니다.", "/goods?goodsId={goodsId}");
 
     private final String message;
     private final String linkTemplate;
