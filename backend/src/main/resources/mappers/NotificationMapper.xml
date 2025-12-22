@@ -39,13 +39,14 @@
     </update>
 
     <!-- 시작된 경매 조회 -->
+    <!-- goods 글 등록한 순간부터 경매 시간이 흐르기때문에 시작 시점을 WAIT -->
     <select id="findStartedAuctions" resultType="map">
         SELECT
             g.id AS goodsId,
             g.seller_id AS sellerId,
             g.title AS itemName
         FROM goods g
-        WHERE g.auction_status = 'PROCEEDING'
+        WHERE g.auction_status = 'WAIT'
           AND g.created_at &lt;= NOW()
           AND NOT EXISTS (
               SELECT 1
