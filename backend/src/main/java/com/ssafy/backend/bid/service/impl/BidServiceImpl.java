@@ -157,14 +157,6 @@ public  class BidServiceImpl implements BidService {
         * 5. 즉시구매 분기
         * */
         if(isInstantBuy) {
-
-            // ★ 구매자(새로운 입찰자) 경매 즉시 구매 알림 ★
-//            notificationService.createNotification(
-//                    loginUserId,
-//                    NotificationType.AUCTION_BUY_NOW,
-//                    Map.of("itemName", title),
-//                    goodsId
-//            );
             
             // ★ 판매자(즉시구매가 입찰) 경매 즉시 구매 알림 ★
             notificationService.createNotification(
@@ -206,14 +198,6 @@ public  class BidServiceImpl implements BidService {
                     TransactionType.INCOME,
                     "입금"
             );
-
-            // ★ 판매자(즉시구매가 낙찰) 낙찰 알림 ★
-//            notificationService.createNotification(
-//                    sellerId,
-//                    NotificationType.AUCTION_WIN,
-//                    Map.of("itemName", title),
-//                    goodsId
-//            );
 
             // 즉시구매면 여기서 끝 (Lock 처리 안 함)
             return;
