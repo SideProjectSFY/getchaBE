@@ -28,5 +28,5 @@ public interface AnimeMapper {
     List<String> findGenresById(@Param("animeId") Long animeId);
 
     // 7. 콘텐츠 유사도 기반 추천 결과 반환
-//    List<TmdbAnimeEntityDto> findByIds(@Param("ids") List<Long> ids);
+    List<TmdbAnimeEntityDto> findAnimeListByIds(@Param("ids") List<Long> ids);
 }

@@ -44,10 +44,15 @@ public class RecommendedResponseDto {
     public static class RecommendedAnime {
 
         private Long animeId;
-        private Double matchRate;
-
         private String animeTitle;
         private String posterUrl;
+        private String overview;
+        private Double voteAverage;
+        private Long voteCount;
+        private Double popularity;
+
+        private Double matchRate;
+
     }
 
 }

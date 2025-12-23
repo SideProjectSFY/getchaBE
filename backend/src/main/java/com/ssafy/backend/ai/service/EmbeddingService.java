@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +35,8 @@ public class EmbeddingService {
     @Value("${huggingface.api.url}")
     private String hfRouterUrl;
 
+    // 애니 임베딩 캐시 (조회 속도 빠르게 하기 위해 데이터에 담아두는 형식)
+    private final Map<Long, List<Double>> animeEmbeddingCache = new ConcurrentHashMap<>();
 
 
     private final AnimeMapper animeMapper;
@@ -85,6 +89,8 @@ public class EmbeddingService {
 
             return vector;
 
+        } catch(IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -93,7 +99,14 @@ public class EmbeddingService {
      */
     public List<Double> getAnimeEmbedding(Long animeId) throws IOException {
 
-        // 애니메이션 ID 를 통해 애니메이션 데이터 조회
+        // 1. 캐시 히트
+        List<Double> cachedList =  animeEmbeddingCache.get(animeId);
+        if(cachedList != null) {
+            return cachedList;
+        }
+
+
+        // 2. 캐시 미스 일 경우 -> 애니메이션 ID 를 통해 애니메이션 데이터 조회
         TmdbAnimeEntityDto animeDto = animeMapper.findByIdForEmbedding(animeId);
 
         String overview = animeDto.getOverview();
@@ -109,7 +122,12 @@ public class EmbeddingService {
                 .append("\n OverView : ").append(overview)
                 .append("\n Genres : ").append(genreText);
 
-        return createEmbedding(sb.toString());
+        // 허깅페이스 통해서 생성한 임베딩 리스트
+        List<Double> embeddingList = createEmbedding(sb.toString());
+
+        // 캐시에 저장
+        animeEmbeddingCache.put(animeId, embeddingList);
+        return embeddingList;
     }
 
 

@@ -1,6 +1,8 @@
 package com.ssafy.backend.ai.service;
 
 import com.ssafy.backend.ai.model.RecommendedResponseDto;
+import com.ssafy.backend.anime.model.AnimeMapper;
+import com.ssafy.backend.anime.model.TmdbAnimeEntityDto;
 import com.ssafy.backend.goods.model.GoodsMapper;
 import com.ssafy.backend.user.model.User;
 import com.ssafy.backend.user.model.UserMapper;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,63 +23,60 @@ public class RecommendationService {
     private final UserMapper userMapper;
     private final EmbeddingService embeddingService;
     private final GoodsMapper goodsMapper;
+    private final AnimeMapper animeMapper;
 
-    /*
-     * AI 기반 애니메이션 추천
-     * 유저가 선택한 선호 애니 1~3번을 기반으로
-     * 가중 평균 임베딩을 만든 뒤 Pinecone에서 유사 애니를 조회
-     */
-    public List<RecommendedResponseDto.RecommendedGoods> recommend(Long userId) throws IOException {
+    // 유저 벡터 캐시 (추천 애니메이션 속도 개선을 위해 데이터 담아두기)
+    private final Map<Long, CachedUserVector> userVectorCache = new ConcurrentHashMap<>();
 
-        User user = userMapper.findById(userId);
+    private record CachedUserVector(String likedKey, List<Double> vector) {
+    }
 
-        log.info("likedAnime1 = {}", user.getLikedAnimeId1());
-        log.info("likedAnime2 = {}", user.getLikedAnimeId2());
-        log.info("likedAnime3 = {}", user.getLikedAnimeId3());
+    /**
+     * 사용자 맞춤 추천 애니메이션
+     * */
+    public List<RecommendedResponseDto.RecommendedAnime> recommendAnime(Long userId) throws IOException {
+        List<RecommendedResponseDto.RecommendedGoods> animeIdList=  recommend(userId);
 
-        // 유저 선호 애니 임베딩 벡터 + 가중치
-        List<List<Double>> vectors = new ArrayList<>();
-        List<Double> weights = new ArrayList<>();
+        // animeId → matchRate 매핑
+        Map<Long, Double> matchRateMap = animeIdList.stream()
+                .collect(Collectors.toMap(
+                        RecommendedResponseDto.RecommendedGoods::getAnimeId,
+                        RecommendedResponseDto.RecommendedGoods::getMatchRate
+                ));
 
-        if (user.getLikedAnimeId1() != null) {
-            vectors.add(embeddingService.getAnimeEmbedding(user.getLikedAnimeId1()));
-            weights.add(0.5); // 대표 선호
-        }
-        if (user.getLikedAnimeId2() != null) {
-            vectors.add(embeddingService.getAnimeEmbedding(user.getLikedAnimeId2()));
-            weights.add(0.3);
-        }
-        if (user.getLikedAnimeId3() != null) {
-            vectors.add(embeddingService.getAnimeEmbedding(user.getLikedAnimeId3()));
-            weights.add(0.2);
-        }
-
-        // 선호 애니가 하나도 없으면 추천 불가
-        if (vectors.isEmpty()) return List.of();
-
-        // 가중 평균 유저 벡터 생성
-        List<Double> userVector =
-                embeddingService.weightedUserEmbedding(vectors, weights);
-
-        // Pinecone에서 유사 애니 조회
-        List<RecommendedResponseDto.RecommendedGoods> recommendAnimeList =
-                embeddingService.querySimilarAnime(userVector, 7);
-
-
-        // 이미 관심 애니로 등록된 애니는 제외
-        Set<Long> likedIds = new java.util.HashSet<>();
-        if (user.getLikedAnimeId1() != null) likedIds.add(user.getLikedAnimeId1());
-        if (user.getLikedAnimeId2() != null) likedIds.add(user.getLikedAnimeId2());
-        if (user.getLikedAnimeId3() != null) likedIds.add(user.getLikedAnimeId3());
-
-        List<RecommendedResponseDto.RecommendedGoods> excludeRecommendList = recommendAnimeList.stream()
-                .filter(dto
-                        -> !likedIds.contains(dto.getAnimeId()))
-                .limit(5)
+        // 추천animeIds 뽑아내기
+        List<Long> animeIds = animeIdList.stream()
+                .map(RecommendedResponseDto.RecommendedGoods::getAnimeId)
+                .distinct()
                 .toList();
 
-        return excludeRecommendList;
+        // 추천 animeIds 로 애니메이션 관련 데이터 가져오기
+        List<TmdbAnimeEntityDto> animeDtoList= animeMapper.findAnimeListByIds(animeIds);
+
+        List<RecommendedResponseDto.RecommendedAnime> resultList =
+                animeDtoList.stream()
+                        .map(anime -> RecommendedResponseDto.RecommendedAnime.builder()
+                                .animeId(anime.getId())
+                                .animeTitle(anime.getTitle())
+                                .posterUrl(anime.getPosterUrl())
+                                .overview(anime.getOverview())
+                                .voteAverage(anime.getVoteAverage())
+                                .voteCount(anime.getVoteCount())
+                                .popularity(anime.getPopularity())
+                                .matchRate(matchRateMap.getOrDefault(anime.getId(), 0.0))
+                                .build()
+                        )
+                        // 매칭률 내림차순
+                        .sorted(Comparator.comparing(
+                                RecommendedResponseDto.RecommendedAnime::getMatchRate
+                        ).reversed())
+                        // 상위 6개만
+                        .limit(6)
+                        .toList();
+
+        return resultList;
     }
+
 
 
     /*
@@ -127,7 +127,7 @@ public class RecommendationService {
                                 .auctionEndAt(goods.getAuctionEndAt())
                                 .createdAt(goods.getCreatedAt())
                                 .animeId(goods.getAnimeId())
-                                .matchRate(matchRateMap.get(goods.getAnimeId()))
+                                .matchRate(matchRateMap.getOrDefault(goods.getAnimeId(), 0.0))
                                 .build()
                         )
                         .collect(Collectors.groupingBy(RecommendedResponseDto.RecommendedGoods::getAnimeId));
@@ -166,6 +166,89 @@ public class RecommendationService {
         }
 
         return resultList;
+    }
+
+
+    /*
+     * AI 기반 애니메이션 추천
+     * 유저가 선택한 선호 애니 1~3번을 기반으로
+     * 가중 평균 임베딩을 만든 뒤 Pinecone에서 유사 애니를 조회
+     */
+    private List<RecommendedResponseDto.RecommendedGoods> recommend(Long userId) throws IOException {
+
+        User user = userMapper.findById(userId);
+        List<Double> userVectorList = getUserVector(user);
+
+        if (userVectorList.isEmpty()) {
+            return List.of();
+        }
+
+        // Pinecone에서 유사 애니 조회
+        List<RecommendedResponseDto.RecommendedGoods> recommendAnimeList =
+                embeddingService.querySimilarAnime(userVectorList, 7);
+
+        // 이미 관심 애니로 등록된 애니는 제외
+        Set<Long> likedIds = new java.util.HashSet<>();
+        if (user.getLikedAnimeId1() != null) likedIds.add(user.getLikedAnimeId1());
+        if (user.getLikedAnimeId2() != null) likedIds.add(user.getLikedAnimeId2());
+        if (user.getLikedAnimeId3() != null) likedIds.add(user.getLikedAnimeId3());
+
+        List<RecommendedResponseDto.RecommendedGoods> excludeRecommendList = recommendAnimeList.stream()
+                .filter(dto
+                        -> !likedIds.contains(dto.getAnimeId()))
+                .limit(5)
+                .toList();
+
+        return excludeRecommendList;
+    }
+
+    /**
+     * 유저 벡터 캐싱
+     * */
+    private List<Double> getUserVector(User user) throws IOException {
+
+        String likedKey = buildLikedKey(user);
+        CachedUserVector cached = userVectorCache.get(user.getId());
+
+        // ✅ 캐시 히트 (관심 애니 동일)
+        if (cached != null && likedKey.equals(cached.likedKey)) {
+            return cached.vector;
+        }
+
+        List<List<Double>> vectors = new ArrayList<>();
+        List<Double> weights = new ArrayList<>();
+
+        if (user.getLikedAnimeId1() != null) {
+            vectors.add(embeddingService.getAnimeEmbedding(user.getLikedAnimeId1()));
+            weights.add(0.5);
+        }
+        if (user.getLikedAnimeId2() != null) {
+            vectors.add(embeddingService.getAnimeEmbedding(user.getLikedAnimeId2()));
+            weights.add(0.3);
+        }
+        if (user.getLikedAnimeId3() != null) {
+            vectors.add(embeddingService.getAnimeEmbedding(user.getLikedAnimeId3()));
+            weights.add(0.2);
+        }
+
+        if (vectors.isEmpty()) {
+            return List.of();
+        }
+
+        List<Double> userVector = embeddingService.weightedUserEmbedding(vectors, weights);
+
+        userVectorCache.put(
+                user.getId(),
+                new CachedUserVector(likedKey, userVector)
+        );
+
+        return userVector;
+    }
+
+    private String buildLikedKey(User user) {
+        return user.getLikedAnimeId1() + "-"
+                + user.getLikedAnimeId2() + "-"
+                + user.getLikedAnimeId3();
     }
 
 }

@@ -86,8 +86,8 @@
         WHERE ag.anime_id = #{animeId}
     </select>
 
-    <!--  7. 콘텐츠 유사도 기반 추천 결과 반환  -->
-    <select id="findByIds" resultType="com.ssafy.backend.anime.model.TmdbAnimeEntityDto">
+    <!--  7. 콘텐츠 유사도 기반 추천 애니메이션 Id 결과 반환  -->
+    <select id="findAnimeListByIds" resultType="com.ssafy.backend.anime.model.TmdbAnimeEntityDto">
         SELECT id, title, poster_url AS posterUrl, overview, vote_average, vote_count, popularity
         FROM tmdb_anime
         WHERE id IN

@@ -19,8 +19,9 @@ public class RecommendationController {
     private final RecommendationService recommendationService;
 
     @GetMapping("/anime")
-    public List<RecommendedResponseDto.RecommendedGoods> recommend(@AuthenticationPrincipal Long userId) throws IOException {
-        return recommendationService.recommend(userId);
+    public List<RecommendedResponseDto.RecommendedAnime> recommendAnime(
+            @AuthenticationPrincipal Long userId) throws IOException {
+        return recommendationService.recommendAnime(userId);
     }
 
     @GetMapping("/goods")
