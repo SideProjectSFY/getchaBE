@@ -1,11 +1,7 @@
 package com.ssafy.backend.ai.service;
 
-import com.ssafy.backend.ai.model.RecommendedGoodsDto;
-import com.ssafy.backend.anime.model.AnimeMapper;
-import com.ssafy.backend.anime.model.TmdbAnimeEntityDto;
-import com.ssafy.backend.goods.model.Goods;
+import com.ssafy.backend.ai.model.RecommendedResponseDto;
 import com.ssafy.backend.goods.model.GoodsMapper;
-import com.ssafy.backend.goods.model.GoodsResponseDto;
 import com.ssafy.backend.user.model.User;
 import com.ssafy.backend.user.model.UserMapper;
 import lombok.RequiredArgsConstructor;
@@ -13,10 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +19,6 @@ public class RecommendationService {
 
     private final UserMapper userMapper;
     private final EmbeddingService embeddingService;
-    private final AnimeMapper animeMapper;
     private final GoodsMapper goodsMapper;
 
     /*
@@ -33,7 +26,7 @@ public class RecommendationService {
      * 유저가 선택한 선호 애니 1~3번을 기반으로
      * 가중 평균 임베딩을 만든 뒤 Pinecone에서 유사 애니를 조회
      */
-    public List<TmdbAnimeEntityDto> recommend(Long userId) throws IOException {
+    public List<RecommendedResponseDto.RecommendedGoods> recommend(Long userId) throws IOException {
 
         User user = userMapper.findById(userId);
 
@@ -66,8 +59,9 @@ public class RecommendationService {
                 embeddingService.weightedUserEmbedding(vectors, weights);
 
         // Pinecone에서 유사 애니 조회
-        List<String> ids =
+        List<RecommendedResponseDto.RecommendedGoods> recommendAnimeList =
                 embeddingService.querySimilarAnime(userVector, 7);
+
 
         // 이미 관심 애니로 등록된 애니는 제외
         Set<Long> likedIds = new java.util.HashSet<>();
@@ -75,230 +69,103 @@ public class RecommendationService {
         if (user.getLikedAnimeId2() != null) likedIds.add(user.getLikedAnimeId2());
         if (user.getLikedAnimeId3() != null) likedIds.add(user.getLikedAnimeId3());
 
-        List<Long> animeIds = ids.stream()
-                .map(Long::valueOf)
-                .filter(id -> !likedIds.contains(id))
+        List<RecommendedResponseDto.RecommendedGoods> excludeRecommendList = recommendAnimeList.stream()
+                .filter(dto
+                        -> !likedIds.contains(dto.getAnimeId()))
                 .limit(5)
                 .toList();
 
-        return animeMapper.findByIds(animeIds);
+        return excludeRecommendList;
     }
 
-    /*
-     * Controller에서 호출하는 메인 추천 메서드
-     * 내부적으로 AI 추천 + fallback + 정렬 로직을 수행한 뒤
-     * GoodsCard 형태로 반환
-     */
-    public List<GoodsResponseDto.GoodsCard> recommendGoods(Long userId) throws IOException {
-        User user = userMapper.findById(userId);
-        return recommendGoodsInternal(user);
-    }
-
-    /*
-     * AI 추천 애니 기반 굿즈 조회
-     * 추천 애니에 해당하는 굿즈 중 auction_status가 진행 중인 굿즈만 조회
-     */
-    private List<Goods> recommendAiGoods(Long userId) throws IOException {
-
-        List<TmdbAnimeEntityDto> animeList = recommend(userId);
-        List<Long> animeIds = animeList.stream()
-                .map(TmdbAnimeEntityDto::getId)
-                .toList();
-
-        if (animeIds.isEmpty()) return List.of();
-
-        return goodsMapper.selectOngoingGoodsByAnimeIdsExcludeSellerAndWish(
-                animeIds, userId, userId
-        );
-    }
-
-    /*
-     * fallback 굿즈 조회
-     * AI 추천 굿즈가 부족할 경우 인기 굿즈로 대체
-     */
-    private List<Goods> recommendFallbackGoods(Long userId, int limit) {
-        return goodsMapper.selectPopularOngoingGoodsExcludeSellerAndWish(
-                userId, userId, limit
-        );
-    }
 
     /*
      * AI 추천 굿즈 + 정확도(matchRate) 계산
      * 유저 벡터와 굿즈 애니 벡터 비교
      * 코사인 유사도 기반 정확도 산출
      */
-    public List<RecommendedGoodsDto> recommendGoodsWithMatch(Long userId)
+    public List<RecommendedResponseDto.RecommendedGoods> recommendGoodsWithMatch(Long userId)
             throws IOException {
 
-        User user = userMapper.findById(userId);
+        // 사용자 관심 애니메이션 기반 추천 애니메이션 ID, 유사도 조회
+        List<RecommendedResponseDto.RecommendedGoods> recommendList = recommend(userId);
 
-        // 유저 임베딩 벡터 생성 (애니 추천과 동일 로직)
-        List<List<Double>> vectors = new ArrayList<>();
-        List<Double> weights = new ArrayList<>();
 
-        if (user.getLikedAnimeId1() != null) {
-            vectors.add(embeddingService.getAnimeEmbedding(user.getLikedAnimeId1()));
-            weights.add(0.5);
-        }
-        if (user.getLikedAnimeId2() != null) {
-            vectors.add(embeddingService.getAnimeEmbedding(user.getLikedAnimeId2()));
-            weights.add(0.3);
-        }
-        if (user.getLikedAnimeId3() != null) {
-            vectors.add(embeddingService.getAnimeEmbedding(user.getLikedAnimeId3()));
-            weights.add(0.2);
-        }
+        // animeId → matchRate 매핑
+        Map<Long, Double> matchRateMap = recommendList.stream()
+                .collect(Collectors.toMap(
+                        RecommendedResponseDto.RecommendedGoods::getAnimeId,
+                        RecommendedResponseDto.RecommendedGoods::getMatchRate
+                ));
 
-        if (vectors.isEmpty()) return List.of();
+        // 추천animeIds 뽑아내기
+        List<Long> animeIds = recommendList.stream()
+                .map(RecommendedResponseDto.RecommendedGoods::getAnimeId)
+                .distinct()
+                .toList();
 
-        List<Double> userVector =
-                embeddingService.weightedUserEmbedding(vectors, weights);
+        // 추천animeIds 기반 굿즈 목록 조회
+        List<RecommendedResponseDto.RecommendedGoods> goodsListByRecommendIds =
+                goodsMapper.selectPAWRecommendGoodsList(animeIds, userId);
 
-        List<RecommendedGoodsDto> result = new ArrayList<>();
+        // 애니메이션별 굿즈를 미리 그룹핑
+        Map<Long, List<RecommendedResponseDto.RecommendedGoods>> goodsByAnime =
+                goodsListByRecommendIds.stream()
+                        .map(goods -> RecommendedResponseDto.RecommendedGoods.builder()
+                                .goodsId(goods.getGoodsId())
+                                .sellerId(goods.getSellerId())
+                                .sellerNickname(goods.getSellerNickname())
+                                .wishCount(goods.getWishCount())
+                                .checkWish(goods.isCheckWish())
+                                .category(goods.getCategory())
+                                .mainFilePath(goods.getMainFilePath())
+                                .title(goods.getTitle())
+                                .animeTitle(goods.getAnimeTitle())
+                                .currentBidAmount(goods.getCurrentBidAmount())
+                                .startPrice(goods.getStartPrice())
+                                .auctionStatus(goods.getAuctionStatus())
+                                .auctionEndAt(goods.getAuctionEndAt())
+                                .createdAt(goods.getCreatedAt())
+                                .animeId(goods.getAnimeId())
+                                .matchRate(matchRateMap.get(goods.getAnimeId()))
+                                .build()
+                        )
+                        .collect(Collectors.groupingBy(RecommendedResponseDto.RecommendedGoods::getAnimeId));
 
-        // 1. AI 기반 굿즈
-        List<Goods> aiGoods = recommendAiGoods(userId);
+        // 애니메이션 유사도 순 정렬 (기준 애니 리스트)
+        List<Long> sortedAnimeIds = goodsByAnime.values().stream()
+                .map(list -> list.get(0)) // 같은 animeId → matchRate 동일
+                .sorted(Comparator.comparingDouble(RecommendedResponseDto.RecommendedGoods::getMatchRate).reversed())
+                .map(RecommendedResponseDto.RecommendedGoods::getAnimeId)
+                .toList();
 
-        for (Goods goods : aiGoods) {
-            try {
-                List<Double> animeVector =
-                        embeddingService.getAnimeEmbedding(goods.getAnimeId());
+        // 라운드 로빈 + 랜덤 추출
+        int targetSize = 10;
+        List<RecommendedResponseDto.RecommendedGoods> resultList = new ArrayList<>();
 
-                int matchRate = (int) Math.round(
-                        cosineSimilarity(userVector, animeVector) * 100
-                );
+        // 각 애니 굿즈를 랜덤 셔플
+        goodsByAnime.values().forEach(Collections::shuffle);
 
-                result.add(new RecommendedGoodsDto(goods, matchRate, true));
-            } catch (Exception e) {
-                log.warn("[AI GOODS] 임베딩 없음 → skip. animeId={}", goods.getAnimeId());
-            }
-        }
+        int index = 0;
+        while (resultList.size() < targetSize) {
+            boolean added = false;
 
-        // 2. fallback 굿즈
-        if (result.size() < 5) {
-            int need = 5 - result.size();
+            for (Long animeId : sortedAnimeIds) {
+                List<RecommendedResponseDto.RecommendedGoods> goodsList = goodsByAnime.get(animeId);
 
-            List<Goods> fallbackGoods =
-                    recommendFallbackGoods(userId, need);
+                if (goodsList.size() > index) {
+                    resultList.add(goodsList.get(index));
+                    added = true;
 
-            for (Goods goods : fallbackGoods) {
-                try {
-                    List<Double> animeVector =
-                            embeddingService.getAnimeEmbedding(goods.getAnimeId());
-
-                    int matchRate = (int) Math.round(
-                            cosineSimilarity(userVector, animeVector) * 100
-                    );
-
-                    result.add(new RecommendedGoodsDto(goods, matchRate, false));
-                } catch (Exception e) {
-                    log.warn("[FALLBACK] 임베딩 없음 → skip. animeId={}", goods.getAnimeId());
+                    if (resultList.size() == targetSize) break;
                 }
             }
+
+            if (!added) break; // 더 뽑을 게 없으면 종료
+            index++;
         }
 
-        return result;
+        return resultList;
     }
 
-    /*
-     * 내부 추천 로직
-     * AI 추천 애니 기반 굿즈를 우선 조회하고
-     * 부족할 경우 인기 굿즈로 보완
-     * 마감 임박 가중치를 포함하여 정렬
-     */
-    private List<GoodsResponseDto.GoodsCard> recommendGoodsInternal(User user) throws IOException {
-
-        Long userId = user.getId();
-
-        List<TmdbAnimeEntityDto> animeList = recommend(userId);
-        List<Long> animeIds = animeList.stream()
-                .map(TmdbAnimeEntityDto::getId)
-                .toList();
-
-        List<Goods> result = new ArrayList<>();
-
-        if (!animeIds.isEmpty()) {
-            List<Goods> aiGoods =
-                    goodsMapper.selectOngoingGoodsByAnimeIdsExcludeSellerAndWish(
-                            animeIds, userId, userId
-                    );
-
-            result.addAll(
-                    aiGoods.stream()
-                            .sorted((g1, g2) -> {
-
-                                double score1 = (animeIds.size() - animeIds.indexOf(g1.getAnimeId()));
-                                double score2 = (animeIds.size() - animeIds.indexOf(g2.getAnimeId()));
-
-                                score1 += urgencyBoost(g1.getAuctionEndAt());
-                                score2 += urgencyBoost(g2.getAuctionEndAt());
-
-                                return Double.compare(score2, score1);
-                            })
-                            .limit(5)
-                            .toList()
-            );
-        }
-
-        if (result.size() < 5) {
-            int need = 5 - result.size();
-
-            List<Long> alreadyAddedIds = result.stream()
-                    .map(Goods::getId)
-                    .toList();
-
-            List<Goods> fallback =
-                    goodsMapper.selectPopularOngoingGoodsExcludeSellerAndWish(
-                            userId, userId, need
-                    );
-
-            fallback.stream()
-                    .filter(g -> !alreadyAddedIds.contains(g.getId()))
-                    .forEach(result::add);
-        }
-
-        if (result.isEmpty()) return List.of();
-
-        List<Long> goodsIds = result.stream()
-                .map(Goods::getId)
-                .toList();
-
-        return goodsMapper.selectGoodsCardsByIds(goodsIds, userId);
-    }
-
-    /*
-     * 코사인 유사도 계산
-     */
-    private double cosineSimilarity(List<Double> v1, List<Double> v2) {
-        double dot = 0.0;
-        double norm1 = 0.0;
-        double norm2 = 0.0;
-
-        for (int i = 0; i < v1.size(); i++) {
-            dot += v1.get(i) * v2.get(i);
-            norm1 += v1.get(i) * v1.get(i);
-            norm2 += v2.get(i) * v2.get(i);
-        }
-        return dot / (Math.sqrt(norm1) * Math.sqrt(norm2));
-    }
-
-    /*
-     * 마감 임박 가중치 (굿즈 정렬 보조 기준)
-     */
-    private double urgencyBoost(LocalDateTime auctionEndAt) {
-
-        if (auctionEndAt == null) return 0.0;
-
-        long minutesLeft =
-                java.time.Duration.between(
-                        LocalDateTime.now(),
-                        auctionEndAt
-                ).toMinutes();
-
-        if (minutesLeft <= 60) return 0.3;
-        if (minutesLeft <= 360) return 0.2;
-        if (minutesLeft <= 1440) return 0.1;
-
-        return 0.0;
-    }
 }

@@ -386,102 +386,49 @@
     </select>
 
 
-    <!-- AI -->
-    <select id="selectOngoingGoodsByAnimeIds"
-            parameterType="list"
-            resultType="com.ssafy.backend.goods.model.Goods">
-
+    <select id="selectPAWRecommendGoodsList"
+            resultType="com.ssafy.backend.ai.model.RecommendedResponseDto$RecommendedGoods">
         SELECT
-        id,
-        title,
-        current_price,
-        auction_end_at,
-        thumbnail_url,
-        anime_id
-        FROM goods
-        WHERE status IN('WAIT','PROCEEDING')
-        AND anime_id IN
-        <foreach collection="animeIds" item="id" open="(" close=")" separator=",">
-            #{id}
-        </foreach>
-    </select>
-
-    <select id="selectOngoingGoodsByAnimeIdsExcludeSeller"
-            resultType="com.ssafy.backend.goods.model.Goods">
-
-        SELECT
-        id,
-        seller_id,
-        title,
-        category,
-        start_price,
-        auction_status,
-        auction_end_at,
-        created_at,
-        anime_id
-        FROM goods
-        WHERE auction_status IN('WAIT','PROCEEDING')
-        AND seller_id != #{sellerId}
-        AND anime_id IN
-        <foreach collection="animeIds" item="id" open="(" close=")" separator=",">
-            #{id}
-        </foreach>
-    </select>
-
-    <select id="selectOngoingGoodsByAnimeIdsExcludeSellerAndWish"
-            resultType="com.ssafy.backend.goods.model.Goods">
-
-        SELECT
-        g.id,
-        g.seller_id,
-        g.title,
-        g.category,
-        g.start_price,
-        g.auction_status,
-        g.auction_end_at,
-        g.created_at,
-        g.anime_id
+            g.id AS goodsId,
+            g.title AS title,
+            g.seller_id AS sellerId,
+            g.category AS category,
+            g.auction_status AS auctionStatus,
+            g.auction_end_at AS auctionEndAt,
+            g.start_price AS startPrice,
+            g.created_at AS createdAt,
+            g.anime_id AS animeId,
+            MAX(u.nickname) AS sellerNickname,
+            MAX(ta.title) AS animeTitle,
+            MAX(b.bid_amount) AS currentBidAmount,
+            MAX(gi.file_path) AS mainFilePath,
+            COUNT(w.id) AS wishCount,
+            CASE
+                WHEN #{userId} IS NULL THEN 0
+                ELSE MAX(CASE WHEN w.user_id = #{userId} THEN 1 ELSE 0 END)
+            END AS checkWish
         FROM goods g
-        WHERE g.auction_status IN('WAIT','PROCEEDING')
-        AND g.seller_id != #{sellerId}
+        LEFT JOIN user u ON g.seller_id = u.id
+        LEFT JOIN bid b ON b.goods_id = g.id AND b.is_highest = TRUE
+        LEFT JOIN goods_image gi ON gi.goods_id = g.id AND gi.sort_order = 1
+        LEFT JOIN wishlist w ON w.goods_id = g.id
+        LEFT JOIN tmdb_anime ta ON ta.id = g.anime_id
+        where g.deleted_at IS NULL
+        and g.auction_status IN('WAIT','PROCEEDING')
+        AND g.seller_id != #{userId}
         AND g.anime_id IN
         <foreach collection="animeIds" item="id" open="(" close=")" separator=",">
             #{id}
         </foreach>
         AND NOT EXISTS (
-        SELECT 1
-        FROM wishlist w
-        WHERE w.goods_id = g.id
-        AND w.user_id = #{userId}
-        )
-    </select>
-
-    <select id="selectPopularOngoingGoodsExcludeSellerAndWish"
-            resultType="com.ssafy.backend.goods.model.Goods">
-
-        SELECT
-        g.id,
-        g.seller_id,
-        g.title,
-        g.category,
-        g.start_price,
-        g.auction_status,
-        g.auction_end_at,
-        g.created_at,
-        g.anime_id
-        FROM goods g
-        LEFT JOIN wishlist w ON g.id = w.goods_id
-        WHERE g.auction_status IN('WAIT','PROCEEDING')
-        AND g.seller_id != #{sellerId}
-        AND NOT EXISTS (
-        SELECT 1
-        FROM wishlist w2
-        WHERE w2.goods_id = g.id
-        AND w2.user_id = #{userId}
+            SELECT 1
+            FROM wishlist w
+            WHERE w.goods_id = g.id
+            AND w.user_id = #{userId}
         )
         GROUP BY g.id
-        ORDER BY COUNT(w.id) DESC, g.created_at DESC
-        LIMIT #{limit}
+        ORDER BY
+            createdAt DESC;
     </select>
 
     <!-- AI 추천 결과 : goodsId 목록으로 GoodsCard(이미지 포함) 조회 -->
