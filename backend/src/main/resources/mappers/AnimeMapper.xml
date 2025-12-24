@@ -57,5 +57,44 @@
         VALUES (#{genreId}, #{animeId})
     </insert>
 
+    <!-- 4. 임베딩용: 전체 애니 임베딩 생성 -->
+    <select id="findAllForEmbedding"
+            resultType="com.ssafy.backend.anime.model.TmdbAnimeEntityDto">
+    <![CDATA[
+        SELECT id, title, poster_url AS posterUrl,
+               overview, vote_average AS voteAverage,
+               vote_count AS voteCount, popularity AS popularity
+        FROM tmdb_anime
+        WHERE overview IS NOT NULL
+          AND TRIM(overview) <> ''
+        ORDER BY popularity DESC
+        ]]>
+    </select>
+
+    <!--  5. 임베딩용: 유저가 좋아하는 애니 3개에 대해서만 임베딩 생성  -->
+    <select id="findByIdForEmbedding" resultType="com.ssafy.backend.anime.model.TmdbAnimeEntityDto">
+        SELECT id, title, overview, popularity, vote_average, vote_count
+        FROM tmdb_anime
+        WHERE id = #{id}
+    </select>
+
+    <!-- 6. 임베딩용: 애니 하나의 장르 이름 조회 -->
+    <select id="findGenresById" resultType="string">
+        SELECT g.name
+        FROM tmdb_genre g
+                 JOIN anime_genre ag ON ag.tmdb_genre_id = g.id
+        WHERE ag.anime_id = #{animeId}
+    </select>
+
+    <!--  7. 콘텐츠 유사도 기반 추천 애니메이션 Id 결과 반환  -->
+    <select id="findAnimeListByIds" resultType="com.ssafy.backend.anime.model.TmdbAnimeEntityDto">
+        SELECT id, title, poster_url AS posterUrl, overview, vote_average, vote_count, popularity
+        FROM tmdb_anime
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
 </mapper>
 

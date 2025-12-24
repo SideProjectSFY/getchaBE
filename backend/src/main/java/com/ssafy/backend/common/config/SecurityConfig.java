@@ -66,6 +66,9 @@ public class SecurityConfig {
                         // 찜 기준 인기 굿즈 목록 조회 허용
                         .requestMatchers("/api/v1/goods/hot-goods").permitAll()
 
+                        // 애니메이션 초기 bulk 허용
+                        .requestMatchers("/api/v1/admin/anime/**").permitAll()
+
                         // 나머지 API 인증 필요
                         .anyRequest().authenticated()
                 )

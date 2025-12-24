@@ -1,5 +1,6 @@
 package com.ssafy.backend.goods.model;
 
+import com.ssafy.backend.ai.model.RecommendedResponseDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -145,4 +146,16 @@ public interface GoodsMapper {
      * @return 판매자Id(pk)
      */
     Long selectSellerIdByGoodsId(Long goodsId);
+
+    /**
+     * AI 추천용: 추천 애니 기반 진행 중 굿즈 조회
+     * - 내가 등록한 굿즈 제외
+     * - 이미 찜한 굿즈 제외
+     */
+    List<RecommendedResponseDto.RecommendedGoods> selectPAWRecommendGoodsList(
+            @Param("animeIds") List<Long> animeIds,
+            @Param("userId") Long userId
+    );
+
+
 }
