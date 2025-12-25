@@ -195,23 +195,7 @@ getcha/
 
 ## 🏗 시스템 아키텍처 (미수정)
 
-### Servlet + JSP MVC 패턴 구조
 
-```
-Client (Browser)
-    ↓ (1) HTTP 요청 (GET/POST/PUT/DELETE)
-DTO (Data Transport Object)
-    ↓ (2)
-Controller
-    ↓ (3) 요청 파라미터 추출 및 비즈니스 로직 호출
-Service
-    ↓ (4) 비즈니스 로직 전달 시 Vo 반환
-Vo
-    ↓ (5) 구현체에 Vo 전달
-Repository (MySQL)
-    ↓ (6) 구현체 내부 JPA를 이용한 데이터 저장/조회 (Entity 자체로 추출 X)
-JPA
-```
 
 
 
