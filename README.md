@@ -229,7 +229,7 @@ JPA
 
 1. **헤더**
     <details>
-    <summary>상세 내용 보기</summary>
+    <summary>구성 요소</summary>
 
    - Getcha 글자 & 로고
    - 알림 확인
@@ -240,7 +240,7 @@ JPA
 
 2. **회원 가입**
     <details>
-    <summary>상세 내용 보기</summary>
+    <summary>구성 요소</summary>
 
    - 닉네임
    - 이름
@@ -253,7 +253,7 @@ JPA
 
 3. **메인 페이지**
     <details>
-    <summary>상세 내용 보기</summary>
+    <summary>구성 요소</summary>
 
    - 상단 : 로그인한 유저에게 맞는 AI 추천 상품
    - 중앙 : 상품 카테고리 별 리스트 (+ALL 포함)
@@ -261,7 +261,7 @@ JPA
 
 4. **굿즈 리스트 페이지**
     <details>
-    <summary>상세 내용 보기</summary>
+    <summary>구성 요소</summary>
 
    - 필터(상태 / 카테고리 / 정렬) & 검색
    - **굿즈 등록 버튼 (로그인 시)**
@@ -277,7 +277,7 @@ JPA
 
 5. **굿즈 등록 / 수정 페이지**
     <details>
-    <summary>상세 내용 보기</summary>
+    <summary>구성 요소</summary>
 
    - 제목 / 애니메이션 / 카테고리 / 설명
    - 굿즈 이미지 업로드 (다중 업로드 가능/ 1개이상 필수)
@@ -288,7 +288,7 @@ JPA
 
 6. **굿즈 상세 페이지**
     <details>
-    <summary>상세 내용 보기</summary>
+    <summary>구성 요소</summary>
 
    - **수정 / 삭제 버튼 (경매 참여자가 없는 경우에만)**
    - **경매 중지 버튼 (진행 중인 경우에만)**
@@ -306,7 +306,7 @@ JPA
 
 7. **마이페이지**
     <details>
-    <summary>상세 내용 보기</summary>
+    <summary>구성 요소</summary>
 
    - 찜 리스트
    - 등록 경매 글 리스트
